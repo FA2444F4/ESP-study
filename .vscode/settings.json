@@ -1,0 +1,29 @@
+{
+  "C_Cpp.intelliSenseEngine": "default",
+  "idf.openOcdConfigs": [
+    "board/esp32c6-builtin.cfg"
+  ],
+  "idf.portWin": "COM6",
+  "idf.currentSetup": "C:/Conf/Espressif/frameworks/esp-idf-v5.5/",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32c6"
+  },
+  "clangd.path": "C:\\Conf\\Espressif\\tools\\esp-clang\\esp-19.1.2_20250312\\esp-clang\\bin\\clangd.exe",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=C:\\Conf\\Espressif\\tools\\riscv32-esp-elf\\esp-14.2.0_20241119\\riscv32-esp-elf\\bin\\riscv32-esp-elf-gcc.exe",
+    "--compile-commands-dir=c:\\Code\\ESP32\\chenxing_IOT\\test_task\\build"
+  ],
+  "idf.flashType": "UART",
+  "files.associations": {
+    "stdio.h": "c",
+    "algorithm": "c",
+    "format": "c",
+    "task.h": "c",
+    "semphr.h": "c",
+    "freertos.h": "c",
+    "gpio.h": "c",
+    "uart_handler.h": "c"
+  },
+  "commentTranslate.targetLanguage": "zh-CN"
+}
