@@ -57,9 +57,9 @@ void led_control_set_color(uint8_t red, uint8_t green, uint8_t blue)
 //开灯
 void led_control_turn_on(void)
 {
-    // 点亮为白色
-    led_control_set_color(255, 255, 255);
-    ESP_LOGI(TAG, "LED turned ON");
+    ESP_LOGI(TAG, "Turning LED ON with last color");
+    // 使用保存在 s_led_state 中的上一次颜色来点亮 LED
+    led_control_set_color(s_led_state.r, s_led_state.g, s_led_state.b);
 }
 //关灯
 void led_control_turn_off(void)
