@@ -6,7 +6,7 @@
 #define LED_STRIP_LED_NUMBERS  1
 #define LED_STRIP_RMT_RES_HZ   (10 * 1000 * 1000) // 10MHz
 
-static const char *TAG = "LED_CONTROL";
+static const char *TAG = "led控制";
 static led_strip_handle_t led_strip = NULL;
 
 void led_control_init(void)
@@ -25,7 +25,7 @@ void led_control_init(void)
     };
     
     ESP_ERROR_CHECK(led_strip_new_rmt_device(&strip_config, &rmt_config, &led_strip));
-    ESP_LOGI(TAG, "LED strip initialized.");
+    ESP_LOGI(TAG, "LED strip 初始化.");
 
     led_strip_clear(led_strip);
 }
