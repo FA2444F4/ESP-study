@@ -8,6 +8,15 @@
 
 static const char *TAG = "led控制"; 
 static led_strip_handle_t led_strip = NULL;
+typedef struct{
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+}led_color_state_t;
+
+// 初始化时默认颜色为白色，但灯是灭的
+static led_color_state_t s_led_state = {255, 255, 255};
+
 //初始化
 void led_control_init(void)
 {
