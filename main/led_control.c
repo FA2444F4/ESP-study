@@ -43,10 +43,16 @@ void led_control_init(void)
 void led_control_set_color(uint8_t red, uint8_t green, uint8_t blue)
 {
     if (led_strip) {
-        // WS2812B 是 GRB 顺序，所以参数要对应调整
-        ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, 0, red, green, blue));
+        // 1. 更新内部状态
+        s_led_state.r = red;
+        s_led_state.g = green;
+        s_led_state.b = blue;
+        // 2. 设置 LED 硬件
+        ESP_LOGI(TAG, "Setting color to R:%d G:%d B:%d", red, green, blue);
+        // 注意 WS2812B 的 GRB 顺序
+        ESP_ERROR_CHECK(led_strip_set_pixel(led_strip, 0, s_led_state.g, s_led_state.r, s_led_state.b));
         ESP_ERROR_CHECK(led_strip_refresh(led_strip));
-    }
+        }
 }
 //开灯
 void led_control_turn_on(void)
