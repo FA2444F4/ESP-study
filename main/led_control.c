@@ -69,3 +69,34 @@ void led_control_turn_off(void)
         ESP_LOGI(TAG, "LED turned OFF");
     }
 }
+
+//命令处理函数
+void led_cmd_handler(const char *command, const char *args)
+{
+    //test_device_set_led_statu=on/off
+    if (strcmp(command, "test_device_set_led_statu") == 0) {
+        if (args == NULL) {
+            ESP_LOGE("LED_CMD", "Missing value for statu (on/off)");
+            return;
+        }
+        if (strcmp(args, "on") == 0) {
+            led_control_turn_on();
+        } else if (strcmp(args, "off") == 0) {
+            led_control_turn_off();
+        }
+    } 
+    //test_device_set_led_rgb=255,255,255
+    else if (strcmp(command, "test_device_set_led_rgb") == 0) {
+        if (args == NULL) {
+            ESP_LOGE("LED_CMD", "Missing value for rgb (r,g,b)");
+            return;
+        }
+        uint8_t r, g, b;
+        if (sscanf(args, "%hhu,%hhu,%hhu", &r, &g, &b) == 3) {
+            led_control_set_color(r, g, b);
+        }
+    } 
+    else {
+        ESP_LOGW("LED_CMD", "Unknown LED command: %s", command);
+    }
+}

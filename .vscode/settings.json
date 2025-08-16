@@ -3,7 +3,7 @@
   "idf.openOcdConfigs": [
     "board/esp32c6-builtin.cfg"
   ],
-  "idf.portWin": "COM33",
+  "idf.portWin": "COM6",
   "idf.currentSetup": "C:/Conf/Espressif/frameworks/esp-idf-v5.5/",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32c6"
@@ -24,7 +24,9 @@
     "freertos.h": "c",
     "gpio.h": "c",
     "uart_handler.h": "c",
-    "string.h": "c"
+    "string.h": "c",
+    "uart.h": "c",
+    "led_control.h": "c"
   },
   "commentTranslate.targetLanguage": "zh-CN"
 }

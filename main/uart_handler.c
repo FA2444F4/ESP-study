@@ -3,16 +3,15 @@
 #include "freertos/task.h"
 #include "driver/uart.h"
 #include "esp_log.h"
-#include "led_control.h" // 包含 LED 控制模块的头文件，以便调用其函数
+#include "led_control.h"
+#include "cmd_parser.h"
 
 #define UART_NUM          UART_NUM_0 // 使用与 USB 监视器相同的 UART0
 #define UART_RX_BUF_SIZE  (128)
 
 static const char *TAG = "UART_HANDLER";
 
-/**
- * @brief UART 接收任务
- */
+//接收任务
 static void uart_rx_task(void *pvParameters)
 {
     uint8_t *data = (uint8_t *) malloc(UART_RX_BUF_SIZE + 1);
@@ -22,14 +21,15 @@ static void uart_rx_task(void *pvParameters)
         int len = uart_read_bytes(UART_NUM, data, UART_RX_BUF_SIZE, pdMS_TO_TICKS(1000));
         
         if (len > 0) {
+            // 移除末尾可能的回车换行符
+            while (len > 0 && (data[len-1] == '\r' || data[len-1] == '\n')) {
+                len--;
+            }
             data[len] = '\0'; // 添加字符串结束符
-            ESP_LOGI(TAG, "Received data: %s", (char*)data);
 
-            // 解析命令
-            if (*data == '1') {
-                led_control_turn_on();
-            } else if (*data == '0') {
-                led_control_turn_off();
+            if(len > 0) {
+                // 将接收到的完整命令交给命令解析器处理
+                cmd_parser_process_line((char*)data);
             }
         }
     }
