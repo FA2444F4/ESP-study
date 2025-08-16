@@ -1,4 +1,4 @@
-# idf_component_register(SRCS "cmd_parser.c" "led_control.c" "uart_handler.c" "test_pwd_led.c" "test_led.c" "test_queue.c" "test_task.c"
+# idf_component_register(SRCS "system_info.c" "cmd_parser.c" "led_control.c" "uart_handler.c" "test_pwd_led.c" "test_led.c" "test_queue.c" "test_task.c"
 #                        PRIV_REQUIRES spi_flash
 #                        INCLUDE_DIRS "")
 
