@@ -26,7 +26,9 @@
     "uart_handler.h": "c",
     "string.h": "c",
     "uart.h": "c",
-    "led_control.h": "c"
+    "led_control.h": "c",
+    "esp_system.h": "c",
+    "nvs_flash.h": "c"
   },
   "commentTranslate.targetLanguage": "zh-CN"
 }
