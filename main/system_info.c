@@ -102,19 +102,25 @@ esp_err_t system_info_set_sn(const char* sn)
 }
 
 //命令解析
-void system_info_cmd_handler(const char *command, const char *args)
+void system_info_cmd_handler(const char *command, const char *args,cmd_responder_t responder, void *context)
 {
+    char response_buffer[64]; // 用于构建响应字符串
     if (strcmp(command, "test_device_get_sn") == 0) {
-        printf("SN: %s\r\n", system_info_get_sn());
+        // printf("SN: %s\r\n", system_info_get_sn());
+        snprintf(response_buffer,sizeof(response_buffer),"SN: %s", system_info_get_sn());
+        responder(response_buffer,context);//通过responder返回结果
     } else if (strcmp(command, "test_device_set_sn") == 0) {
         if (args) {
             if(system_info_set_sn(args) == ESP_OK) {
-                printf("OK\r\n");
+                // printf("OK\r\n");
+                responder("OK", context);
             } else {
-                printf("Error: Failed to set SN.\r\n");
+                // printf("Error: Failed to set SN.\r\n");
+                responder("Error: Failed to set SN.", context);
             }
         } else {
-            printf("Error: Missing value for set_sn.\r\n");
+            // printf("Error: Missing value for set_sn.\r\n");
+            responder("Error: Missing value for set_sn.", context);
         }
     }
 }

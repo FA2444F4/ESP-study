@@ -5,11 +5,19 @@
 #include "esp_log.h"
 #include "led_control.h"
 #include "cmd_parser.h"
+#include "cmd_parser.h"
 
 #define UART_NUM          UART_NUM_0 // 使用与 USB 监视器相同的 UART0
 #define UART_RX_BUF_SIZE  (128)
 
 static const char *TAG = "UART_HANDLER";
+
+// --- UART 专用的响应器函数 ---
+static void uart_responder(const char *response_str, void *context)
+{
+    // UART 的响应器很简单，就是直接打印
+    printf("%s\r\n", response_str);
+}
 
 //接收任务
 static void uart_rx_task(void *pvParameters)
@@ -29,7 +37,7 @@ static void uart_rx_task(void *pvParameters)
 
             if(len > 0) {
                 // 将接收到的完整命令交给命令解析器处理
-                cmd_parser_process_line((char*)data);
+                cmd_parser_process_line((char*)data,uart_responder,NULL);
             }
         }
     }

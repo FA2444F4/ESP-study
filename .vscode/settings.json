@@ -28,7 +28,14 @@
     "uart.h": "c",
     "led_control.h": "c",
     "esp_system.h": "c",
-    "nvs_flash.h": "c"
+    "nvs_flash.h": "c",
+    "ble_handler.h": "c",
+    "cstdint": "c",
+    "stdint.h": "c",
+    "system_info.h": "c",
+    "esp_log.h": "c",
+    "cmd_parser.h": "c",
+    "esp_bt_main.h": "c"
   },
   "commentTranslate.targetLanguage": "zh-CN"
 }
