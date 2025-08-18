@@ -1,7 +1,7 @@
 #include "led_control.h"
 #include "led_strip.h"
 #include "esp_log.h"
-
+#include <string.h>
 
 #define BLINK_GPIO             8
 #define LED_STRIP_LED_NUMBERS  1

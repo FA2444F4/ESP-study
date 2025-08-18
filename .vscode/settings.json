@@ -3,7 +3,7 @@
   "idf.openOcdConfigs": [
     "board/esp32c6-builtin.cfg"
   ],
-  "idf.portWin": "COM6",
+  "idf.portWin": "COM33",
   "idf.currentSetup": "C:/Conf/Espressif/frameworks/esp-idf-v5.5/",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32c6"
@@ -35,7 +35,8 @@
     "system_info.h": "c",
     "esp_log.h": "c",
     "cmd_parser.h": "c",
-    "esp_bt_main.h": "c"
+    "esp_bt_main.h": "c",
+    "led_strip.h": "c"
   },
   "commentTranslate.targetLanguage": "zh-CN"
 }
