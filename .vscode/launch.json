@@ -1,6 +1,16 @@
 {
   "version": "0.2.0",
   "configurations": [
+    
+    
+
+    {
+      "name": "ESP-IDF Debug: Launch",
+      "type": "espidf",
+      "request": "launch"
+    },
+    
+    
     {
       "type": "gdbtarget",
       "request": "attach",

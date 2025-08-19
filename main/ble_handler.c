@@ -150,6 +150,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         esp_ble_gatts_create_service(gatts_if, &(esp_gatt_srvc_id_t){.is_primary=true, .id={.inst_id=0, .uuid={.len=ESP_UUID_LEN_16, .uuid={.uuid16=GATTS_SERVICE_UUID}}}}, GATTS_NUM_HANDLES);
         break;
     case ESP_GATTS_CREATE_EVT:
+        ESP_LOGI(TAG,"ESP_GATTS_CREATE_EVT");
         gl_profile.service_handle = param->create.service_handle;
         esp_ble_gatts_start_service(gl_profile.service_handle);
         // 添加 RX (Write) 特征

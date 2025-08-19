@@ -39,5 +39,6 @@
     "led_strip.h": "c",
     "time.h": "c"
   },
-  "commentTranslate.targetLanguage": "zh-CN"
+  "commentTranslate.targetLanguage": "zh-CN",
+  "idf.monitorPort": "COM6"
 }
