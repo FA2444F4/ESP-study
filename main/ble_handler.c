@@ -36,6 +36,7 @@ static esp_ble_adv_params_t adv_params = {
     .adv_filter_policy  = ADV_FILTER_ALLOW_SCAN_ANY_CON_ANY,
 };
 
+
 // 广播数据
 static esp_ble_adv_data_t adv_data = {
     .set_scan_rsp = false,
