@@ -98,13 +98,21 @@ static void ble_responder(const char *response_str, void *context)
     ble_responder_context_t *ble_ctx = (ble_responder_context_t *)context;
 
     ESP_LOGI(TAG, "Responding via BLE with handle %d: %s", ble_ctx->char_handle, response_str);
-    // 使用 Indicate 发送，需要手机端确认，更可靠
+    // 使用 Notification 发送，不需要手机端确认，更可靠
     esp_ble_gatts_send_indicate(ble_ctx->gatts_if,
                               ble_ctx->conn_id,
                               ble_ctx->char_handle,
                               strlen(response_str),
                               (uint8_t *)response_str,
                               false); // false for Notification, true for Indication
+}
+
+//主动向已连接的手机客户端发送数据
+esp_err_t ble_send_data_to_phone(const char* data){
+    //检查是否有客户端连接
+    if(gl_profile.conn_id==0){
+        
+    }
 }
 
 // GATTS 事件处理函数 (核心)
