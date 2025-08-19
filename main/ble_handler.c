@@ -108,12 +108,12 @@ static void ble_responder(const char *response_str, void *context)
 }
 
 //主动向已连接的手机客户端发送数据
-esp_err_t ble_send_data_to_phone(const char* data){
-    //检查是否有客户端连接
-    if(gl_profile.conn_id==0){
-        
-    }
-}
+// esp_err_t ble_send_data_to_phone(const char* data){
+//     //检查是否有客户端连接
+//     if(gl_profile.conn_id==0){
+//         int a=1;
+//     }
+// }
 
 // GATTS 事件处理函数 (核心)
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
