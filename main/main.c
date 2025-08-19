@@ -17,4 +17,5 @@ void app_main(void)
     uart_handler_init();
     ble_handler_init();
     ESP_LOGI(TAG, "All modules initialized.");
+
 }

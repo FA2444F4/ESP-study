@@ -11,6 +11,7 @@
 #include "esp_gatts_api.h"
 #include "esp_bt_main.h"
 #include "esp_gatt_common_api.h"
+#include "time.h"
 
 // 引入我们自己的模块
 #include "led_control.h"
@@ -19,7 +20,8 @@
 
 #define TAG "BLE_HANDLER"
 #define DEVICE_NAME "我不是徐瑜禧"
-
+// 在文件顶部或 app_main 外部
+static TaskHandle_t send_data_task_handle = NULL;
 // --- 使用 16-bit UUID ---
 #define GATTS_SERVICE_UUID   0x00FF // 自定义服务 UUID
 #define GATTS_CHAR_UUID_RX   0xFF01 // RX 特征 (用于接收手机写入的数据)
@@ -51,6 +53,7 @@ struct gatts_profile_inst {
     uint16_t gatts_if;
     uint16_t app_id;
     uint16_t conn_id;
+    bool is_connected;
     uint16_t service_handle;
     uint16_t rx_char_handle; // 接收特征的句柄
     uint16_t tx_char_handle; // 发送特征的句柄
@@ -108,13 +111,33 @@ static void ble_responder(const char *response_str, void *context)
                               false); // false for Notification, true for Indication
 }
 
-//主动向已连接的手机客户端发送数据
-// esp_err_t ble_send_data_to_phone(const char* data){
-//     //检查是否有客户端连接
-//     if(gl_profile.conn_id==0){
-//         int a=1;
-//     }
-// }
+// 主动向已连接的手机客户端发送数据
+esp_err_t ble_send_data_to_phone(const char* data){
+    //检查是否有客户端连接
+    if(!gl_profile.is_connected){
+        ESP_LOGE(TAG, "No client connected, cannot send data.");
+        return ESP_FAIL;
+    }
+    size_t data_len= strlen(data);
+    if(data_len==0){
+        ESP_LOGW(TAG, "Data to send is empty.");
+        return ESP_ERR_INVALID_ARG;
+    }
+    ESP_LOGI(TAG, "Actively sending data to phone: %s", data);
+    esp_err_t err = esp_ble_gatts_send_indicate(gl_profile.gatts_if,
+                                                gl_profile.conn_id,
+                                                gl_profile.tx_char_handle,
+                                                data_len,
+                                                (uint8_t *)data,
+                                                false); // 使用 notify
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "esp_ble_gatts_send_indicate failed, error code = %x", err);
+    }
+    
+    return err;
+
+}
+
 
 // GATTS 事件处理函数 (核心)
 static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_if, esp_ble_gatts_cb_param_t *param)
@@ -148,12 +171,13 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
         break;
     case ESP_GATTS_CONNECT_EVT:
         gl_profile.conn_id = param->connect.conn_id;
-        // 通知 LED 模块，蓝牙进入了“已连接”状态
+        gl_profile.is_connected=true;
         led_control_set_ble_status(LED_BLE_CONNECTED);
         ESP_LOGI(TAG, "Client connected, conn_id %d", param->connect.conn_id);
+        
         break;
     case ESP_GATTS_DISCONNECT_EVT:
-        // 通知 LED 模块，蓝牙恢复“未连接”状态
+        gl_profile.is_connected=false;
         led_control_set_ble_status(LED_BLE_DISCONNECTED);
         ESP_LOGI(TAG, "Client disconnected");
         esp_ble_gap_start_advertising(&adv_params);
@@ -217,4 +241,6 @@ void ble_handler_init(void)
     if (local_mtu_ret){
         ESP_LOGE(TAG, "Set local MTU failed, error code = %x", local_mtu_ret);
     }
+
+    
 }
