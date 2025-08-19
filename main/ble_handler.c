@@ -18,7 +18,7 @@
 #include "cmd_parser.h"
 
 #define TAG "BLE_HANDLER"
-#define DEVICE_NAME "MyC6-BLE-Server"
+#define DEVICE_NAME "我不是徐瑜禧"
 
 // --- 使用 16-bit UUID ---
 #define GATTS_SERVICE_UUID   0x00FF // 自定义服务 UUID
