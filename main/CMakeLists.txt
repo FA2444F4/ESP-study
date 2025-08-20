@@ -1,5 +1,5 @@
 
-file(GLOB SRCS "led_control.c" "uart_handler.c" "ble_handler.c" "*.c")
+file(GLOB SRCS "main.c" "led_control.c" "uart_handler.c" "ble_handler.c" "*.c")
 
 idf_component_register(
                     SRCS ${SRCS}
