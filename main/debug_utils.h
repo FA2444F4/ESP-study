@@ -8,4 +8,9 @@
  */
 void debug_utils_cmd_handler(const char *command, const char *args, cmd_responder_t responder, void *context);
 
+/**
+ * @brief 初始化 debug模块（创建任务和信号量）
+ */
+void debug_utils_init(void);
+
 #endif // DEBUG_UTILS_H

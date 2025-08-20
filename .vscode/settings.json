@@ -37,7 +37,8 @@
     "cmd_parser.h": "c",
     "esp_bt_main.h": "c",
     "led_strip.h": "c",
-    "time.h": "c"
+    "time.h": "c",
+    "esp_heap_caps.h": "c"
   },
   "commentTranslate.targetLanguage": "zh-CN",
   "idf.monitorPort": "COM6"
