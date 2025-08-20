@@ -11,7 +11,7 @@
 static const char *TAG = "DEBUG_UTILS";
 
 static SemaphoreHandle_t start_signal;//启动监控信号量
-static volatile bool is_moniotring_active=false;//停止监控标志
+static volatile bool is_monitoring_active=false;//停止监控标志
 static const int monitored_gpios[]={2,3,4,5,6,7,8,9,10,11};
 #define NUM_MONITORED_GPIOS (sizeof(monitored_gpios) / sizeof(monitored_gpios[0]))
 
@@ -101,7 +101,7 @@ static void gpio_monitor_task(void *pvParameters){
      while (1){
         xSemaphoreTake(start_signal,portMAX_DELAY);//堵塞,等待获取启动信号量
         ESP_LOGI(TAG, "Monitoring started!");
-        while(is_moniotring_active){
+        while(is_monitoring_active){
             for (int i = 0; i < NUM_MONITORED_GPIOS; i++) {
                 int current_level = gpio_get_level(monitored_gpios[i]);
                 if (current_level != last_levels[i]) {
