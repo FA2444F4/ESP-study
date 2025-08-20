@@ -6,6 +6,7 @@
 // 引入模块
 #include "led_control.h"
 #include "system_info.h"
+#include "debug_utils.h"
 
 
 static const char *TAG = "CMD_PARSER";
@@ -53,6 +54,7 @@ static const cmd_entry_t cmd_table[] = {
     {"test_device_set_led", led_cmd_handler},
     {"test_device_set_sn",  system_info_cmd_handler},
     {"test_device_get_sn",  system_info_cmd_handler},
+    {"debug_",  debug_utils_cmd_handler},
     {NULL, NULL} // 表结束的标记
 };
 
