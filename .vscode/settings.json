@@ -3,7 +3,7 @@
   "idf.openOcdConfigs": [
     "board/esp32c6-builtin.cfg"
   ],
-  "idf.portWin": "COM6",
+  "idf.portWin": "COM3",
   "idf.currentSetup": "C:/Conf/Espressif/frameworks/esp-idf-v5.5/",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32c6"
@@ -41,5 +41,8 @@
     "esp_heap_caps.h": "c"
   },
   "commentTranslate.targetLanguage": "zh-CN",
-  "idf.monitorPort": "COM6"
+  "idf.monitorPort": "COM6",
+  "idf.espIdfPathWin": "C:/Conf/Espressif/frameworks/esp-idf-v5.5/",
+  "idf.toolsPathWin": "C:\\Conf\\Espressif",
+  "idf.pythonInstallPath": "C:\\Conf\\Espressif\\tools\\idf-python\\3.11.2\\python.exe"
 }

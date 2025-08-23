@@ -21,27 +21,27 @@ static const int monitored_gpios[]={2,3,4,5,6,7,8,9,10,11};
  */
 static void print_task_list(cmd_responder_t responder, void *context)
 {
-    // 为任务列表准备一个足够大的缓冲区
-    char *task_list_buffer = (char *)malloc(1024);
-    if (task_list_buffer == NULL) {
-        responder("Error: Malloc failed for task list.", context);
-        return;
-    }
+    // // 为任务列表准备一个足够大的缓冲区
+    // char *task_list_buffer = (char *)malloc(1024);
+    // if (task_list_buffer == NULL) {
+    //     responder("Error: Malloc failed for task list.", context);
+    //     return;
+    // }
     
-    // 获取任务列表信息
-    vTaskList(task_list_buffer);
+    // // 获取任务列表信息
+    // vTaskList(task_list_buffer);
     
-    // 通过 responder 发送回去
-    // 我们需要逐行发送，因为 BLE 的 MTU 限制
-    char *line = strtok(task_list_buffer, "\n");
-    while (line != NULL) {
-        responder(line, context);
-        line = strtok(NULL, "\n");
-        // 在发送多行时，给蓝牙一点喘息时间
-        vTaskDelay(pdMS_TO_TICKS(20));
-    }
+    // // 通过 responder 发送回去
+    // // 我们需要逐行发送，因为 BLE 的 MTU 限制
+    // char *line = strtok(task_list_buffer, "\n");
+    // while (line != NULL) {
+    //     responder(line, context);
+    //     line = strtok(NULL, "\n");
+    //     // 在发送多行时，给蓝牙一点喘息时间
+    //     vTaskDelay(pdMS_TO_TICKS(20));
+    // }
 
-    free(task_list_buffer);
+    // free(task_list_buffer);
 }
 
 /**
