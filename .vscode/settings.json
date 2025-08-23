@@ -12,5 +12,10 @@
     "--compile-commands-dir=c:\\Code\\ESP32\\chenxing_IOT\\test_task\\build"
   ],
   "idf.portWin": "COM3",
-  "idf.flashType": "UART"
+  "idf.flashType": "UART",
+  "files.associations": {
+    "esp_task.h": "c",
+    "cstdlib": "c",
+    "led_control.h": "c"
+  }
 }
