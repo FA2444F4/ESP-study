@@ -42,7 +42,7 @@
   },
   "commentTranslate.targetLanguage": "zh-CN",
   "idf.monitorPort": "COM6",
-  "idf.espIdfPathWin": "C:/Conf/Espressif/frameworks/esp-idf-v5.5/",
+  "idf.espIdfPathWin": "C:/Conf/Espressif/frameworks/esp-idf-v5.4.2/",
   "idf.toolsPathWin": "C:\\Conf\\Espressif",
   "idf.pythonInstallPath": "C:\\Conf\\Espressif\\tools\\idf-python\\3.11.2\\python.exe"
 }
