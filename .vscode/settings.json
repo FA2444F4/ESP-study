@@ -16,6 +16,7 @@
   "files.associations": {
     "esp_task.h": "c",
     "cstdlib": "c",
-    "led_control.h": "c"
+    "led_control.h": "c",
+    "string.h": "c"
   }
 }

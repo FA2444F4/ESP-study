@@ -7,6 +7,7 @@
 #include "esp_log.h"
 #include "esp_heap_caps.h"
 #include "hal/gpio_hal.h"
+#include "freertos/semphr.h"
 
 static const char *TAG = "DEBUG_UTILS";
 

@@ -1,5 +1,4 @@
-
-file(GLOB SRCS "*.c")
+file(GLOB SRCS "system_info.c" "*.c")
 
 idf_component_register(
                     SRCS ${SRCS}
@@ -11,12 +10,6 @@ idf_component_register(
                         esp_driver_uart 
                         nvs_flash
                         bt
-                        led
-                        uart
-                        info
-                        ble
-                        
-                    REQUIRES esp_driver_ledc
+                        esp_driver_ledc
+                        tool
                     INCLUDE_DIRS ".")
-
-
