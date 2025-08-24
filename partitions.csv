@@ -1,0 +1,7 @@
+# 名称,   类型, 子类型,  偏移地址,  大小,   标志
+# Name,   Type, SubType, Offset,  Size, Flags
+nvs,      data, nvs,     0x9000,  0x6000,
+otadata,  data, ota,     0xF000,  0x2000,
+ota_0,    app,  ota_0,   ,        2M,
+ota_1,    app,  ota_1,   ,        2M,
+storage,  data, spiffs,  ,        10M,

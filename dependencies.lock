@@ -1,21 +1,100 @@
 dependencies:
-  espressif/led_strip:
-    component_hash: 28c6509a727ef74925b372ed404772aeedf11cce10b78c3f69b3c66799095e2d
+  espp/base_component:
+    component_hash: 25c5b62f158887e1dc2aae17141d28bdae08e2f7af91bc9f6506933169095f74
+    dependencies:
+    - name: espp/logger
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=1.0'
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.0.22
+  espp/format:
+    component_hash: c131458fb5e0b6b1cc0d8042acaf676b57e2ac8fe232df02fee202bd43a510b7
     dependencies:
     - name: idf
       require: private
-      version: '>=4.4'
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.0.22
+  espp/led:
+    component_hash: f025a7fb3361577cd8807a4ec805100c9467512d4bdf57d6a66f696901d0603b
+    dependencies:
+    - name: espp/base_component
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=1.0'
+    - name: espp/task
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=1.0'
+    - name: idf
+      require: private
+      version: '>=5.0'
     source:
       registry_url: https://components.espressif.com/
       type: service
-    version: 2.5.5
+    version: 1.0.22
+  espp/logger:
+    component_hash: 88fc12fcab4e8335695c816e72599f15a478ecf4bcf753e7ede720857cb21be1
+    dependencies:
+    - name: espp/format
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=1.0'
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.0.22
+  espp/task:
+    component_hash: a5aa6c8d042a5484716781d04021ead09f29c2dc53b953ede60c0a81b317518d
+    dependencies:
+    - name: espp/base_component
+      registry_url: https://components.espressif.com
+      require: private
+      version: '>=1.0'
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com
+      type: service
+    version: 1.0.22
+  espressif/led_strip:
+    component_hash: 223998f10cae6d81f2ad2dd3c1103c2221be298c708e37917482b0153f3ec64e
+    dependencies:
+    - name: idf
+      require: private
+      version: '>=5.0'
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 3.0.1~1
   idf:
     source:
       type: idf
-    version: 5.4.2
+    version: 5.5.0
+  lvgl/lvgl:
+    component_hash: b702d642e03e95928046d5c6726558e6444e112420c77efa5fdb6650b0a13c5d
+    dependencies: []
+    source:
+      registry_url: https://components.espressif.com/
+      type: service
+    version: 9.3.0
 direct_dependencies:
+- espp/led
 - espressif/led_strip
 - idf
-manifest_hash: 21836035a0c25a730ab56579401356930e8200d75414ed783116bbedfd2402bc
+- lvgl/lvgl
+manifest_hash: bc071cfbfc6aeb07ca7443217e49045976d4c28123fd5a7cda7ef2e87ddd46a9
 target: esp32c6
 version: 2.0.0

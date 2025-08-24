@@ -62,10 +62,8 @@ static void led_task(void *pvParameters)
                 if (s_ble_status == LED_BLE_DISCONNECTED) { // 蓝牙未连接(蓝灯闪烁)
                     led_on_for_blink = !led_on_for_blink;
                     if (led_on_for_blink) {
-                        ESP_LOGI(TAG, "APP模式: 设置蓝色");
                         _led_strip_update_and_destroy(false, 0, 0, 10); // 蓝色
                     } else {
-                        ESP_LOGI(TAG, "APP模式: 清除");
                         _led_strip_update_and_destroy(true, 0, 0, 0);
                     }
                     vTaskDelay(pdMS_TO_TICKS(1000));

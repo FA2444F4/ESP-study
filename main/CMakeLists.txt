@@ -1,5 +1,5 @@
 
-file(GLOB SRCS "*.c")
+file(GLOB SRCS "main.c" "*.c")
 
 idf_component_register(
                     SRCS ${SRCS}
@@ -15,6 +15,7 @@ idf_component_register(
                         uart
                         info
                         ble
+                        screen
                         
                     REQUIRES esp_driver_ledc
                     INCLUDE_DIRS ".")
