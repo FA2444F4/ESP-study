@@ -29,7 +29,7 @@ void app_main(void)
 
     // lvgl_handler_init();//ssd1315 oled spi error
 
-    // u8g2_handler_i nit();
+    u8g2_handler_init();
 
 
 
