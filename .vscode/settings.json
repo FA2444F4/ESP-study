@@ -1,13 +1,17 @@
 {
-    "idf.portWin": "COM3",
-    "files.associations": {
-        "ssd1315_driver.h": "c",
-        "lvgl_handler.h": "c",
-        "system_info.h": "c",
-        "lv_display.h": "c",
-        "lvgl.h": "c",
-        "freertos.h": "c",
-        "uart_handler.h": "c"
-    },
-    "idf.flashType": "UART"
+  "idf.portWin": "COM3",
+  "idf.openOcdConfigs": [
+    "board/esp32c6-builtin.cfg"
+  ],
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32c6"
+  },
+  "clangd.path": "C:\\Conf\\Espressif5.5\\tools\\esp-clang\\esp-19.1.2_20250312\\esp-clang\\bin\\clangd.exe",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=C:\\Conf\\Espressif5.5\\tools\\riscv32-esp-elf\\esp-14.2.0_20241119\\riscv32-esp-elf\\bin\\riscv32-esp-elf-gcc.exe",
+    "--compile-commands-dir=c:\\Code\\ESP32\\chenxing_IOT\\test_task\\build"
+  ],
+  "idf.flashType": "UART",
+  "idf.monitorPort": "COM3"
 }

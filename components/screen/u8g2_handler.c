@@ -1,4 +1,3 @@
-/* main.c (已根据您的报错全面修正) */
 
 #include <stdio.h>
 #include <string.h>
@@ -20,19 +19,8 @@
 static spi_device_handle_t spi_handle;
 static u8g2_t u8g2;
 
-// +++ 新增部分：创建一个函数来强制引用字体 +++
-// 这个函数本身没什么实际作用，它的存在就是为了欺骗链接器
-void force_include_chinese_font(void) {
-    volatile const void *font_ptr;
-    // font_ptr = u8g2_font_wqy14_t_chinese1; 
-    // font_ptr = u8g2_font_wqy14_t_chinese2; 
-    // font_ptr = u8g2_font_wqy14_t_chinese3; 
-    font_ptr = u8g2_font_unifont_t_chinese2;
-    (void)font_ptr; // 避免编译器报“未使用变量”的警告
-}
 
 // U8g2 的回调函数：用于处理 GPIO 和延时
-// (已根据报错全面修正)
 uint8_t u8x8_gpio_and_delay_esp32(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, void *arg_ptr) {
     switch (msg) {
         case U8X8_MSG_GPIO_AND_DELAY_INIT:
@@ -57,7 +45,6 @@ uint8_t u8x8_gpio_and_delay_esp32(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int, vo
             vTaskDelay(pdMS_TO_TICKS(arg_int));
             break;
         case U8X8_MSG_DELAY_NANO:
-            // 修正：使用 esp_rom_delay_us
             esp_rom_delay_us(arg_int == 0 ? 0 : (arg_int / 1000) + 1);
             break;
         default:
@@ -82,16 +69,13 @@ uint8_t u8x8_byte_4wire_hw_spi_esp32(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
             // SPI 总线已在外部初始化，此处无需操作
             break;
         case U8X8_MSG_BYTE_SET_DC:
-            // 修正：不再访问 u8x8->pins，直接调用 GPIO 函数
             gpio_set_level(PIN_DC, arg_int);
             break;
         case U8X8_MSG_BYTE_START_TRANSFER:
-            // 修正：不再访问 u8x8->pins 和 display_info
             gpio_set_level(PIN_CS, 0);
             u8x8->gpio_and_delay_cb(u8x8, U8X8_MSG_DELAY_NANO, 100, NULL); // 使用一个固定的短延时
             break;
         case U8X8_MSG_BYTE_END_TRANSFER:
-            // 修正：不再访问 u8x8->pins 和 display_info
             u8x8->gpio_and_delay_cb(u8x8, U8X8_MSG_DELAY_NANO, 100, NULL); // 使用一个固定的短延时
             gpio_set_level(PIN_CS, 1);
             break;
@@ -101,10 +85,36 @@ uint8_t u8x8_byte_4wire_hw_spi_esp32(u8x8_t *u8x8, uint8_t msg, uint8_t arg_int,
     return 1;
 }
 
+const char *string_array[] = {
+        "C", 
+        "S", 
+        "徐",
+        "瑜",
+        "禧"
+};
+int num_strings=sizeof(string_array) / sizeof(string_array[0]);
+static void u8g2_task(void *pvParameters) {
+    int line_move_count = 0; 
+    int string_index = 0;
+    
+    while(1) {
+        const char *current_string = string_array[string_index];
+        u8g2_uint_t string_width = u8g2_GetUTF8Width(&u8g2, current_string);
+        u8g2_uint_t x_pos = (u8g2_GetDisplayWidth(&u8g2) - string_width) / 2;
+        u8g2_ClearBuffer(&u8g2);
+        u8g2_DrawHLine(&u8g2, 0, line_move_count % 64, 128);
+        u8g2_DrawUTF8(&u8g2, x_pos, 40, current_string);
+        u8g2_SendBuffer(&u8g2);
+        line_move_count++;
+        if (line_move_count % 5 == 0) {
+            string_index = (string_index + 1) % num_strings;
+        }
+        vTaskDelay(pdMS_TO_TICKS(200)); 
+    }
+}
 
 void u8g2_handler_init(void) {
-    // +++ 新增部分：在程序开始时调用一次这个函数 +++
-    force_include_chinese_font();
+    
 
     // 1. 初始化 SPI 总线 (与之前相同)
     spi_bus_config_t bus_config = {
@@ -127,38 +137,27 @@ void u8g2_handler_init(void) {
     // 2. 初始化 U8g2
     // 修正：U8g2 内部已经包含了回调函数的原型，我们直接使用 u8x8 提供的标准回调函数名称
     // u8g2_Setup_ssd1315_128x64_noname_f(u8g2, rotation, byte_cb, gpio_and_delay_cb)
-    u8g2_Setup_ssd1315_128x64_noname_f(&u8g2, U8G2_R0, u8x8_byte_4wire_hw_spi_esp32, u8x8_gpio_and_delay_esp32);
+    u8g2_Setup_ssd1315_128x64_noname_f(
+        &u8g2, 
+        U8G2_R0, //无旋转,横向
+        u8x8_byte_4wire_hw_spi_esp32, //回调,spi通信
+        u8x8_gpio_and_delay_esp32//回调,gpio和延时
+    );
     
     u8g2_InitDisplay(&u8g2);
     u8g2_SetPowerSave(&u8g2, 0);
 
     // --- 3. 开始绘图 (与之前相同) ---
-    /* 英文字体ok
+   
     u8g2_ClearBuffer(&u8g2);
-    u8g2_SetFont(&u8g2, u8g2_font_ncenB14_tr);
-    u8g2_DrawStr(&u8g2, 5, 20, "i am");
-    u8g2_DrawStr(&u8g2, 5, 50, "cs xyx");
-    u8g2_SendBuffer(&u8g2); 
-    */
-    u8g2_ClearBuffer(&u8g2);
-    u8g2_SetFont(&u8g2, u8g2_font_wqy14_t_gb2312);
-    // // "测试成功!" 的 UTF-8 字节码
-    // const uint8_t str_test_success[] = {0xE6, 0xB5, 0x8B, 0xE8, 0xAF, 0x95, 0xE6, 0x88, 0x90, 0xE5, 0x8A, 0x9F, 0x21, 0x00};
-    // // "你好, ESP32" 的 UTF-8 字节码
-    // const uint8_t str_hello_esp32[] = {0xE4, 0xBD, 0xA0, 0xE5, 0xA5, 0xBD, 0x2C, 0x20, 0x45, 0x53, 0x50, 0x33, 0x32, 0x00};
-    
-    // 注意：每个数组末尾的 0x00 是字符串的结束符，非常重要！
-    // ** 步骤 2: 必须使用 u8g2_DrawUTF8() 函数 **
-    u8g2_DrawUTF8(&u8g2, 20, 24, "测试成功!aaa"); // 在 (x,y) 坐标处写中文
-    u8g2_DrawUTF8(&u8g2, 10, 52, "你好bbb");
-    // u8g2_DrawUTF8(&u8g2, 20, 24, (const char *)str_test_success);
-    // u8g2_DrawUTF8(&u8g2, 10, 52, (const char *)str_hello_esp32);
+    u8g2_SetFont(&u8g2, u8g2_font_wqy16_t_gb2312);
+    u8g2_DrawUTF8(&u8g2, 50, 24, "Hello"); 
+    u8g2_DrawUTF8(&u8g2, 50, 52, "World");
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     u8g2_SendBuffer(&u8g2); // 将内部缓冲区的数据发送到屏幕
 
     printf("Display initialized and text drawn.\n");
 
-    while(1) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+    xTaskCreate(u8g2_task,"u8g2_task",2048,NULL,5,NULL);
 }
