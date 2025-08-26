@@ -13,5 +13,13 @@
     "--compile-commands-dir=c:\\Code\\ESP32\\chenxing_IOT\\test_task\\build"
   ],
   "idf.flashType": "UART",
-  "idf.monitorPort": "COM3"
+  "idf.monitorPort": "COM3",
+  "files.associations": {
+    "lvgl.h": "c",
+    "spi_master.h": "c",
+    "future": "c",
+    "system_error": "c",
+    "regex": "c",
+    "u8g2_handler.h": "c"
+  }
 }
