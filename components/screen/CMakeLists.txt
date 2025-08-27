@@ -9,4 +9,5 @@ idf_component_register(
                         lvgl
                         u8g2
                         esp_lcd
+                        esp_timer
                     INCLUDE_DIRS ".")

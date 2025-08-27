@@ -28,11 +28,10 @@ void app_main(void)
     ble_handler_init();
     debug_utils_init();
 
-    // lvgl_handler_init();//ssd1315 oled spi error
     // u8g2_handler_init();//ssd1315 oled spi ok
-    st7789v2_driver_init();
-    st7789v2_driver_fill_with_rect_test();
-    // lvgl_handler_init();
+    // st7789v2_driver_init(); st7789v2 lcd spi ok
+    // st7789v2_driver_fill_with_rect_test(); st7789v2 lcd spi ok
+    lvgl_handler_init();
 
     ESP_LOGI(TAG, "All modules initialized.");
     while (1) {
