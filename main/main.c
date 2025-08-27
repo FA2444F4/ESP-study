@@ -13,6 +13,7 @@
 // #include "lvgl.h"
 // #include "ssd1315_driver.h" 
 #include "u8g2_handler.h"
+#include "st7789v2_driver.h"
 static const char *TAG = "MAIN";
 
 
@@ -28,9 +29,8 @@ void app_main(void)
     debug_utils_init();
 
     // lvgl_handler_init();//ssd1315 oled spi error
-
-    u8g2_handler_init();
-
+    // u8g2_handler_init();//ssd1315 oled spi ok
+    st7789v2_driver_init();
 
 
     ESP_LOGI(TAG, "All modules initialized.");

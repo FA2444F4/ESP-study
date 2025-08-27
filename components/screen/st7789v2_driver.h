@@ -1,0 +1,1 @@
+void st7789v2_driver_init(void);

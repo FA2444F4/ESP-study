@@ -13,6 +13,5 @@
     "--compile-commands-dir=c:\\Code\\ESP32\\chenxing_IOT\\test_task\\build"
   ],
   "idf.flashType": "UART",
-  "idf.monitorPort": "COM3",
-  "idf.pythonInstallPath": "F:\\Conf\\Espressif\\tools\\idf-python\\3.11.2\\python.exe"
+  "idf.monitorPort": "COM3"
 }
