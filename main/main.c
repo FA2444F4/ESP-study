@@ -9,11 +9,11 @@
 #include "uart_handler.h"
 #include "ble_handler.h"
 #include "debug_utils.h"
-// #include "lvgl_handler.h"
-// #include "lvgl.h"
+
 // #include "ssd1315_driver.h" 
 #include "u8g2_handler.h"
-#include "st7789v2_driver.h"
+// #include "st7789v2_driver.h"
+#include "lvgl_handler.h"
 static const char *TAG = "MAIN";
 
 
@@ -30,8 +30,7 @@ void app_main(void)
 
     // lvgl_handler_init();//ssd1315 oled spi error
     // u8g2_handler_init();//ssd1315 oled spi ok
-    st7789v2_driver_init();
-
+    lvgl_handler_init();
 
     ESP_LOGI(TAG, "All modules initialized.");
     while (1) {

@@ -14,5 +14,13 @@
   ],
   "idf.flashType": "UART",
   "idf.monitorPort": "COM3",
-  "idf.pythonInstallPath": "F:\\Conf\\Espressif\\tools\\idf-python\\3.11.2\\python.exe"
+  "idf.pythonInstallPath": "F:\\Conf\\Espressif\\tools\\idf-python\\3.11.2\\python.exe",
+  "files.associations": {
+    "esp_heap_caps.h": "c",
+    "st7789v2_driver.h": "c",
+    "u8g2_handler.h": "c",
+    "esp_lcd_panel_ops.h": "c",
+    "esp_lcd_panel_vendor.h": "c",
+    "esp_lcd_panel_io.h": "c"
+  }
 }
