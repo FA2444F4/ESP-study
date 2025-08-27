@@ -1,84 +1,266 @@
-#include "lvgl_handler.h"
-#include "ssd1315_driver.h"
-#include "lvgl.h"
+// #include "lvgl_handler.h"
+// #include "freertos/FreeRTOS.h"
+// #include "freertos/task.h"
+// #include "freertos/semphr.h"
+// #include "esp_timer.h"
+// #include "esp_log.h"
+// #include "esp_heap_caps.h"
+// #include "lvgl.h"
 
+// // 关键：包含我们自己的底层驱动头文件
+// #include "st7789v2_driver.h"
+
+// static const char *TAG = "LVGL_HANDLER";
+
+// // LVGL 核心组件
+// static lv_display_t *disp;
+// static lv_draw_buf_t draw_buf;
+// static SemaphoreHandle_t lvgl_mutex = NULL;
+
+// // 定义LVGL的绘图缓冲区大小
+// #define LVGL_BUF_PIXELS (ST7789_LCD_H_RES * 40)
+
+// // LVGL的 "flush_cb" 回调函数，这是连接LVGL和底层驱动的桥梁
+// static void lvgl_flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
+// {
+//     // 调用我们底层驱动的绘图函数
+//     st7789v2_driver_draw_bitmap(area->x1, area->y1, area->x2, area->y2, px_map);
+//     // 通知LVGL刷新完成
+//     lv_display_flush_ready(display);
+// }
+
+// // LVGL的 "tick" 回调函数，为LVGL提供心跳
+// static void lvgl_tick_cb(void *arg)
+// {
+//     lv_tick_inc(10); // 10ms
+// }
+
+// // LVGL的主任务，负责处理所有LVGL的事件和重绘
+// static void lvgl_task(void *arg)
+// {
+//     ESP_LOGI(TAG, "Starting LVGL task");
+//     while (1) {
+//         xSemaphoreTake(lvgl_mutex, portMAX_DELAY);
+//         lv_timer_handler();
+//         xSemaphoreGive(lvgl_mutex);
+//         vTaskDelay(pdMS_TO_TICKS(10));
+//     }
+// }
+
+// // ---- UI 创建部分 ----
+// static void create_ui(void)
+// {
+//     lv_obj_t *scr = lv_scr_act(); // 获取当前屏幕
+
+//     // 创建一个标签 (Label)
+//     lv_obj_t *label = lv_label_create(scr);
+//     lv_label_set_text(label, "Hello, ESP32-C6!");
+//     lv_obj_set_style_text_font(label, &lv_font_montserrat_24, 0);
+
+//     // 将标签居中对齐
+//     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+// }
+
+
+// // --- 公共初始化函数 ---
+// void lvgl_handler_init(void)
+// {
+//     // 1. 初始化底层屏幕驱动
+//     ESP_LOGI(TAG, "Initializing screen driver...");
+//     st7789v2_driver_init();
+
+//     // 2. 初始化LVGL库
+//     ESP_LOGI(TAG, "Initializing LVGL...");
+//     lv_init();
+
+//     // 3. 为LVGL分配绘图缓冲区 (必须使用DMA内存)
+//     void *buf1 = heap_caps_malloc(LVGL_BUF_PIXELS * sizeof(lv_color_t), MALLOC_CAP_DMA);
+//     assert(buf1);
+
+//     // 4. 初始化LVGL的绘图缓冲区
+//     lv_draw_buf_init(&draw_buf, ST7789_LCD_H_RES, LVGL_BUF_PIXELS / ST7789_LCD_H_RES,
+//                      LV_COLOR_FORMAT_RGB565, 0, buf1, LVGL_BUF_PIXELS * sizeof(lv_color_t));
+    
+//     // 5. 创建并配置LVGL显示设备
+//     ESP_LOGI(TAG, "Creating LVGL display...");
+//     disp = lv_display_create(ST7789_LCD_H_RES, ST7789_LCD_V_RES);
+//     lv_display_set_render_mode(disp, LV_DISPLAY_RENDER_MODE_PARTIAL);
+//     lv_display_set_flush_cb(disp, lvgl_flush_cb);
+//     lv_display_set_draw_buffers(disp, &draw_buf, NULL);
+
+//     // 6. 创建LVGL心跳定时器和主任务
+//     const esp_timer_create_args_t lvgl_tick_timer_args = {
+//         .callback = &lvgl_tick_cb, .name = "lvgl_tick"
+//     };
+//     esp_timer_handle_t lvgl_tick_timer = NULL;
+//     ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
+//     ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, 10 * 1000)); // 10ms
+
+//     lvgl_mutex = xSemaphoreCreateMutex();
+//     xTaskCreate(lvgl_task, "LVGL", 4096, NULL, 6, NULL);
+
+//     // 7. 创建UI
+//     ESP_LOGI(TAG, "Creating UI...");
+//     xSemaphoreTake(lvgl_mutex, portMAX_DELAY);
+//     create_ui();
+//     xSemaphoreGive(lvgl_mutex);
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#include "lvgl_handler.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 #include "esp_timer.h"
 #include "esp_log.h"
 #include "esp_heap_caps.h"
+#include "lvgl.h"
+#include "st7789v2_driver.h"
+
+// --- 用户配置开关 ---
+// 设置为 0 使用全屏刷新模式 (最稳定，建议用此测试)
+// 设置为 1 使用部分刷新模式 (成功后再尝试)
+#define USE_PARTIAL_REFRESH 0
 
 static const char *TAG = "LVGL_HANDLER";
 
-#define LVGL_BUFFER_HEIGHT 16
-#define LVGL_BUFFER_SIZE (SSD1315_WIDTH * LVGL_BUFFER_HEIGHT)
+static lv_display_t *disp;
+static lv_draw_buf_t draw_buf;
+static SemaphoreHandle_t lvgl_mutex = NULL;
 
-static void lv_tick_task(void *arg) {
-    (void)arg;
+#if USE_PARTIAL_REFRESH
+#define LVGL_BUF_PIXELS (ST7789_LCD_H_RES * 40)
+#else
+#define LVGL_BUF_PIXELS (ST7789_LCD_H_RES * ST7789_LCD_V_RES / 10)
+#endif
+
+// LVGL的 "flush_cb" 回调函数
+static void lvgl_flush_cb(lv_display_t *display, const lv_area_t *area, uint8_t *px_map)
+{
+    // *** 最终核心修正：在这里进行颜色字节序交换 ***
+    // LVGL v9 提供了一个内置的、优化的字节交换函数
+    // 如果您的 LVGL 版本较旧可能没有这个函数，但我们先尝试
+    // 注意：这里的 size 参数是字节数
+    // 使用手动循环来实现字节交换，以兼容旧版LVGL
+    uint16_t *pixels = (uint16_t *)px_map;
+    uint32_t num_pixels = lv_area_get_size(area);
+    for (uint32_t i = 0; i < num_pixels; i++) {
+        pixels[i] = (pixels[i] << 8) | (pixels[i] >> 8);
+    }
+    // 调用底层驱动发送处理过的数据
+    st7789v2_driver_draw_bitmap(area->x1, area->y1, area->x2, area->y2, px_map);
+    
+    lv_display_flush_ready(display);
+}
+
+static void lvgl_tick_cb(void *arg)
+{
     lv_tick_inc(10);
 }
 
-// ======================================================================
-//             ↓↓↓ 这是本次修改的核心：创建坐标系校准图案 ↓↓↓
-// ======================================================================
-static void create_diagnostic_ui(void) {
-    lv_obj_t *scr = lv_screen_active();
-    // 将屏幕背景设置为黑色
-    lv_obj_set_style_bg_color(scr, lv_color_black(), 0);
-
-    // --- 绘制一个白色的实心矩形在左上角 ---
-    lv_obj_t *topLeftRect = lv_obj_create(scr);
-    lv_obj_set_size(topLeftRect, 30, 16); // 尺寸 30x16
-    lv_obj_align(topLeftRect, LV_ALIGN_TOP_LEFT, 5, 5); // 坐标 (5,5)
-    lv_obj_set_style_bg_color(topLeftRect, lv_color_white(), 0);
-    lv_obj_set_style_border_width(topLeftRect, 0, 0);
-
-    // --- 绘制一条贯穿屏幕中间的水平线 ---
-    static lv_point_precise_t line_points[] = { {0, 32}, {127, 32} };
-    lv_obj_t *line_h = lv_line_create(scr);
-    lv_line_set_points(line_h, line_points, 2);
-    lv_obj_set_style_line_color(line_h, lv_color_white(), 0);
-
-    // --- 绘制一条贯穿屏幕中间的垂直线 ---
-    static lv_point_precise_t line_points_v[] = { {64, 0}, {64, 63} };
-    lv_obj_t *line_v = lv_line_create(scr);
-    lv_line_set_points(line_v, line_points_v, 2);
-    lv_obj_set_style_line_color(line_v, lv_color_white(), 0);
-
-    // --- 在右下角绘制文字 "OK" ---
-    lv_obj_t *label = lv_label_create(scr);
-    lv_label_set_text(label, "OK");
-    lv_obj_align(label, LV_ALIGN_BOTTOM_RIGHT, -10, -5);
-
-    ESP_LOGI(TAG, "Diagnostic UI created.");
+static void lvgl_task(void *arg)
+{
+    while (1) {
+        xSemaphoreTake(lvgl_mutex, portMAX_DELAY);
+        lv_timer_handler();
+        xSemaphoreGive(lvgl_mutex);
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
 }
 
+// ---- UI 创建部分: 使用两个大矩形进行最终测试 ----
+static void create_ui(void)
+{
+    lv_obj_t *scr = lv_scr_act();
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0x000000), 0); // 背景黑色
 
-void lvgl_handler_init(void) {
-    ssd1315_init();
-    ESP_LOGI(TAG, "Hardware driver initialized.");
+    // 创建一个红色矩形在屏幕左侧
+    lv_obj_t *rect_red = lv_obj_create(scr);
+    lv_obj_set_size(rect_red, 120, 180);
+    lv_obj_set_style_bg_color(rect_red, lv_color_hex(0xFF0000), 0);
+    lv_obj_set_style_border_width(rect_red, 0, 0);
+    lv_obj_set_style_radius(rect_red, 0, 0);
+    lv_obj_align(rect_red, LV_ALIGN_LEFT_MID, 20, 0);
+
+    // 创建一个绿色矩形在屏幕右侧
+    lv_obj_t *rect_green = lv_obj_create(scr);
+    lv_obj_set_size(rect_green, 120, 180);
+    lv_obj_set_style_bg_color(rect_green, lv_color_hex(0x00FF00), 0);
+    lv_obj_set_style_border_width(rect_green, 0, 0);
+    lv_obj_set_style_radius(rect_green, 0, 0);
+    lv_obj_align(rect_green, LV_ALIGN_RIGHT_MID, -20, 0);
+}
+
+void lvgl_handler_init(void)
+{
+    st7789v2_driver_init();
 
     lv_init();
-    ESP_LOGI(TAG, "LVGL core initialized.");
 
-    lv_display_t *disp = lv_display_create(SSD1315_WIDTH, SSD1315_HEIGHT);
-    ESP_LOGI(TAG, "LVGL display created.");
-    lv_display_set_color_format(disp, LV_COLOR_FORMAT_I1);
+    void *buf1 = heap_caps_malloc(LVGL_BUF_PIXELS * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    assert(buf1);
+
+    uint32_t stride = ST7789_LCD_H_RES * sizeof(lv_color_t);
+    lv_draw_buf_init(&draw_buf, ST7789_LCD_H_RES, LVGL_BUF_PIXELS / ST7789_LCD_H_RES,
+                     LV_COLOR_FORMAT_RGB565, stride, buf1, LVGL_BUF_PIXELS * sizeof(lv_color_t));
+
+    disp = lv_display_create(ST7789_LCD_H_RES, ST7789_LCD_V_RES);
     
-    void *buf1 = heap_caps_malloc(LVGL_BUFFER_SIZE, MALLOC_CAP_DMA);
-    assert(buf1 != NULL);
-    lv_display_set_buffers(disp, buf1, NULL, LVGL_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
-    
-    lv_display_set_flush_cb(disp, ssd1315_flush);
+#if USE_PARTIAL_REFRESH
+    lv_display_set_render_mode(disp, LV_DISPLAY_RENDER_MODE_PARTIAL);
+#else
+    lv_display_set_render_mode(disp, LV_DISPLAY_RENDER_MODE_FULL);
+#endif
 
-    const esp_timer_create_args_t periodic_timer_args = {
-        .callback = &lv_tick_task,
-        .name = "periodic_gui"};
-    esp_timer_handle_t periodic_timer;
-    ESP_ERROR_CHECK(esp_timer_create(&periodic_timer_args, &periodic_timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(periodic_timer, 10 * 1000));
-    ESP_LOGI(TAG, "LVGL tick timer started.");
+    lv_display_set_flush_cb(disp, lvgl_flush_cb);
+    lv_display_set_draw_buffers(disp, &draw_buf, NULL);
 
-    // 调用我们新的诊断UI创建函数
-    create_diagnostic_ui();
+    const esp_timer_create_args_t lvgl_tick_timer_args = { .callback = &lvgl_tick_cb, .name = "lvgl_tick" };
+    esp_timer_handle_t lvgl_tick_timer = NULL;
+    ESP_ERROR_CHECK(esp_timer_create(&lvgl_tick_timer_args, &lvgl_tick_timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(lvgl_tick_timer, 10 * 1000));
+
+    lvgl_mutex = xSemaphoreCreateMutex();
+    xTaskCreate(lvgl_task, "LVGL", 4096, NULL, 6, NULL);
+
+    xSemaphoreTake(lvgl_mutex, portMAX_DELAY);
+    create_ui();
+    xSemaphoreGive(lvgl_mutex);
 }
