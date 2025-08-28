@@ -214,96 +214,50 @@ static void lvgl_task(void *pvParameter)
     }
 }
 
-/* 创建一个简单的 LVGL UI 示例 */
-void lvgl_handler_create_ui(void)
-{
-    // 获取当前活动的屏幕
-    lv_obj_t *scr = lv_screen_active();
 
-    // 创建一个标签控件
-    lv_obj_t *label = lv_label_create(scr);
-    lv_label_set_text(label, "Hello from LVGLHA");
-
-    // 将标签居中显示
-    lv_obj_center(label);
-}
 
 void lv_example_get_started_1(void)
 {
-    lv_obj_t *scr = lv_screen_active();
-    
-    // 把背景色设置放在最前面
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x003a57), LV_PART_MAIN);
+    /*Change the active screen's background color*/
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
 
-    lv_obj_t *label = lv_label_create(scr);
-    lv_label_set_text(label, "Hello Font Test");
-    lv_obj_center(label);
-
-    // --- 开始诊断和修复代码 ---
-    
-    // 1. 创建一个全新的、独立的样式
-    static lv_style_t style_test_font;
-    lv_style_init(&style_test_font);
-
-    // 2. 在这个样式中，设置它需要的所有属性
-    
-    // **第1步：设置正确的字体**
-    lv_style_set_text_font(&style_test_font, &lv_font_montserrat_14);
-    
-    // **第2步（关键修复）：也为它设置一个文本颜色**
-    // 这样它就不用去继承父控件的颜色了
-    lv_style_set_text_color(&style_test_font, lv_color_white()); // 或者 lv_color_hex(0xFFFFFF)
-    
-    // 3. 将这个“完整”的样式应用到我们的标签上
-    lv_obj_add_style(label, &style_test_font, 0);
-
-    ESP_LOGI("FONT_TEST", "Explicitly setting font AND color to the label.");
-    
-    // --- 结束诊断和修复代码 ---
+    /*Create a white label, set its text and align it to the center*/
+    lv_obj_t * label = lv_label_create(lv_screen_active());
+    lv_label_set_text(label, "Hello world");
+    lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0xffffff), LV_PART_MAIN);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
 
 
-#define CANVAS_WIDTH  150
-#define CANVAS_HEIGHT 150
-void lv_example_canvas_9(void)
+
+void lv_example_style_8(void)
 {
-    /*Create a buffer for the canvas*/
-    LV_DRAW_BUF_DEFINE_STATIC(draw_buf, CANVAS_WIDTH, CANVAS_HEIGHT, LV_COLOR_FORMAT_ARGB8888);
-    LV_DRAW_BUF_INIT_STATIC(draw_buf);
+    static lv_style_t style;
+    lv_style_init(&style);
 
-    /*Create a canvas and initialize its palette*/
-    lv_obj_t * canvas = lv_canvas_create(lv_screen_active());
-    lv_canvas_set_draw_buf(canvas, &draw_buf);
-    lv_canvas_fill_bg(canvas, lv_color_hex3(0xccc), LV_OPA_COVER);
-    lv_obj_center(canvas);
+    lv_style_set_radius(&style, 5);
+    lv_style_set_bg_opa(&style, LV_OPA_COVER);
+    lv_style_set_bg_color(&style, lv_palette_lighten(LV_PALETTE_GREY, 2));
+    lv_style_set_border_width(&style, 2);
+    lv_style_set_border_color(&style, lv_palette_main(LV_PALETTE_BLUE));
+    lv_style_set_pad_all(&style, 10);
 
-    lv_layer_t layer;
-    lv_canvas_init_layer(canvas, &layer);
+    lv_style_set_text_color(&style, lv_palette_main(LV_PALETTE_BLUE));
+    lv_style_set_text_letter_space(&style, 5);
+    lv_style_set_text_line_space(&style, 20);
+    lv_style_set_text_decor(&style, LV_TEXT_DECOR_UNDERLINE);
 
-    lv_draw_triangle_dsc_t tri_dsc;
-    lv_draw_triangle_dsc_init(&tri_dsc);
-    tri_dsc.p[0].x = 10;
-    tri_dsc.p[0].y = 10;
-    tri_dsc.p[1].x = 100;
-    tri_dsc.p[1].y = 30;
-    tri_dsc.p[2].x = 50;
-    tri_dsc.p[2].y = 100;
+    /*Create an object with the new style*/
+    lv_obj_t * obj = lv_label_create(lv_screen_active());
+    lv_obj_add_style(obj, &style, 0);
+    lv_label_set_text(obj, "Text of\n"
+                      "a label");
 
-    tri_dsc.grad.stops_count = 2;
-    tri_dsc.grad.dir = LV_GRAD_DIR_VER;
-    tri_dsc.grad.stops[0].color = lv_color_hex(0xff0000);
-    tri_dsc.grad.stops[0].frac = 64;    /*Start at 25%*/
-    tri_dsc.grad.stops[0].opa = LV_OPA_COVER;
-    tri_dsc.grad.stops[1].color = lv_color_hex(0x0000ff);
-    tri_dsc.grad.stops[1].opa = LV_OPA_TRANSP;
-    tri_dsc.grad.stops[1].frac = 3 * 64;    /*End at 75%*/
-
-    tri_dsc.opa = 128;  /*Set the overall opacity to 50%*/
-
-    lv_draw_triangle(&layer, &tri_dsc);
-
-    lv_canvas_finish_layer(canvas, &layer);
+    lv_obj_center(obj);
 }
+
+
+
 
 
 
@@ -367,9 +321,7 @@ void lvgl_handler_init(void)
     // 需要在获取互斥锁后调用，以确保线程安全
     if (pdTRUE == xSemaphoreTake(lvgl_mutex, portMAX_DELAY)) {
         // lvgl_handler_create_ui();
-        // lv_example_get_started_1();
-        // lv_example_canvas_7();
-        lv_example_canvas_9();
+        lv_example_get_started_1();
         xSemaphoreGive(lvgl_mutex);
     }
 }
