@@ -170,6 +170,16 @@ static void lvgl_flush_cb(
     , const lv_area_t *area//要刷新到屏幕上的矩形区域的坐标 (x1, y1, x2, y2)。
     , uint8_t *px_map)//渲染好的颜色数据缓冲区
 {
+
+    // --- 1. 计算需要刷新的像素总数 ---
+    // lv_area_get_size 是一个便捷函数，用于计算 area 区域内的像素总数
+    uint32_t area_size_px = lv_area_get_size(area);
+
+    // --- 2. (新增) 执行字节序交换 ---
+    // 在将数据发送给驱动之前，对整个缓冲区进行高低字节交换
+    // 这个函数会直接修改 px_map 指向的内存区域
+    lv_draw_sw_rgb565_swap(px_map, area_size_px);
+
     int32_t x1 = area->x1;
     int32_t y1 = area->y1;
     int32_t x2 = area->x2 + 1;
@@ -204,150 +214,54 @@ static void lvgl_task(void *pvParameter)
     }
 }
 
-/* 创建一个简单的 LVGL UI 示例 */
-void lvgl_handler_create_ui(void)
-{
-    // 获取当前活动的屏幕
-    lv_obj_t *scr = lv_screen_active();
 
-    // 创建一个标签控件
-    lv_obj_t *label = lv_label_create(scr);
-    lv_label_set_text(label, "Hello from LVGL!");
-
-    // 将标签居中显示
-    lv_obj_center(label);
-}
 
 void lv_example_get_started_1(void)
 {
-    lv_obj_t *scr = lv_screen_active();
-    
-    // 把背景色设置放在最前面
-    lv_obj_set_style_bg_color(scr, lv_color_hex(0x003a57), LV_PART_MAIN);
+    /*Change the active screen's background color*/
+    lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
 
-    lv_obj_t *label = lv_label_create(scr);
-    lv_label_set_text(label, "Hello Font Test");
-    lv_obj_center(label);
-
-    // --- 开始诊断和修复代码 ---
-    
-    // 1. 创建一个全新的、独立的样式
-    static lv_style_t style_test_font;
-    lv_style_init(&style_test_font);
-
-    // 2. 在这个样式中，设置它需要的所有属性
-    
-    // **第1步：设置正确的字体**
-    lv_style_set_text_font(&style_test_font, &lv_font_montserrat_14);
-    
-    // **第2步（关键修复）：也为它设置一个文本颜色**
-    // 这样它就不用去继承父控件的颜色了
-    lv_style_set_text_color(&style_test_font, lv_color_white()); // 或者 lv_color_hex(0xFFFFFF)
-    
-    // 3. 将这个“完整”的样式应用到我们的标签上
-    lv_obj_add_style(label, &style_test_font, 0);
-
-    ESP_LOGI("FONT_TEST", "Explicitly setting font AND color to the label.");
-    
-    // --- 结束诊断和修复代码 ---
+    /*Create a white label, set its text and align it to the center*/
+    lv_obj_t * label = lv_label_create(lv_screen_active());
+    lv_label_set_text(label, "Hello world");
+    lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0xffffff), LV_PART_MAIN);
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
 
 
-void lv_example_canvas_7(void)
+
+void lv_example_style_8(void)
 {
-    /*Create a buffer for the canvas*/
-    LV_DRAW_BUF_DEFINE_STATIC(draw_buf, 50, 50, LV_COLOR_FORMAT_ARGB8888);
-    LV_DRAW_BUF_INIT_STATIC(draw_buf);
+    static lv_style_t style;
+    lv_style_init(&style);
 
-    /*Create a canvas and initialize its palette*/
-    lv_obj_t * canvas = lv_canvas_create(lv_screen_active());
-    lv_canvas_set_draw_buf(canvas, &draw_buf);
-    lv_canvas_fill_bg(canvas, lv_color_hex3(0xccc), LV_OPA_COVER);
-    lv_obj_center(canvas);
+    lv_style_set_radius(&style, 5);
+    lv_style_set_bg_opa(&style, LV_OPA_COVER);
+    lv_style_set_bg_color(&style, lv_palette_lighten(LV_PALETTE_GREY, 2));
+    lv_style_set_border_width(&style, 2);
+    lv_style_set_border_color(&style, lv_palette_main(LV_PALETTE_BLUE));
+    lv_style_set_pad_all(&style, 10);
 
-    lv_layer_t layer;
-    lv_canvas_init_layer(canvas, &layer);
+    lv_style_set_text_color(&style, lv_palette_main(LV_PALETTE_BLUE));
+    lv_style_set_text_letter_space(&style, 5);
+    lv_style_set_text_line_space(&style, 20);
+    lv_style_set_text_decor(&style, LV_TEXT_DECOR_UNDERLINE);
 
-    lv_draw_line_dsc_t dsc;
-    lv_draw_line_dsc_init(&dsc);
-    dsc.color = lv_palette_main(LV_PALETTE_RED);
-    dsc.width = 4;
-    dsc.round_end = 1;
-    dsc.round_start = 1;
-    dsc.p1.x = 15;
-    dsc.p1.y = 15;
-    dsc.p2.x = 35;
-    dsc.p2.y = 10;
-    lv_draw_line(&layer, &dsc);
+    /*Create an object with the new style*/
+    lv_obj_t * obj = lv_label_create(lv_screen_active());
+    lv_obj_add_style(obj, &style, 0);
+    lv_label_set_text(obj, "Text of\n"
+                      "a label");
 
-    lv_canvas_finish_layer(canvas, &layer);
-
+    lv_obj_center(obj);
 }
 
 
-/**
- * @brief 创建一个 "红-绿-红" 矩形布局的UI (已修复颜色类型问题)
- */
-void lvgl_handler_create_ui_rgb(void)
-{
-    // --- 1. 定义样式 ---
-    // 为了提高效率，将样式对象声明为 static，这样它们只会被创建一次
-    static lv_style_t style_red;
-    static lv_style_t style_green;
-
-    // 初始化红色样式
-    lv_style_init(&style_red);
-    // 使用 lv_color_hex() 来创建颜色，以兼容所有颜色深度配置
-    lv_style_set_bg_color(&style_red, lv_color_hex(0xFF0000)); // 红色
-    lv_style_set_radius(&style_red, 0);                       // 设置圆角为0，确保是直角矩形
-    lv_style_set_border_width(&style_red, 0);                 // 设置边框宽度为0
-
-    // 初始化绿色样式
-    lv_style_init(&style_green);
-    // 使用 lv_color_hex() 来创建颜色
-    lv_style_set_bg_color(&style_green, lv_color_hex(0x00FF00)); // 绿色
-    lv_style_set_radius(&style_green, 0);
-    lv_style_set_border_width(&style_green, 0);
 
 
-    // --- 2. 创建一个 Flexbox 布局的容器 ---
-    // 获取当前活动屏幕作为父对象
-    lv_obj_t * main_container = lv_obj_create(lv_screen_active());
-    lv_obj_remove_style_all(main_container); // 移除容器自身的样式，使其完全透明
-    lv_obj_set_size(main_container, lv_pct(100), lv_pct(100)); // 设置容器大小占满整个屏幕
-    lv_obj_center(main_container);                           // 将容器居中
-
-    // 设置容器使用 Flexbox 布局
-    lv_obj_set_layout(main_container, LV_LAYOUT_FLEX);
-    // 设置 Flexbox 的主方向为行（横向排列）
-    lv_obj_set_flex_flow(main_container, LV_FLEX_FLOW_ROW);
-    // 移除子对象之间的间距
-    lv_obj_set_style_pad_gap(main_container, 0, 0);
 
 
-    // --- 3. 在容器中创建三个矩形（子对象） ---
 
-    // 左边的红色矩形
-    lv_obj_t * rect_left = lv_obj_create(main_container);     // 在容器中创建对象
-    lv_obj_remove_style_all(rect_left);                      // 移除默认样式
-    lv_obj_add_style(rect_left, &style_red, 0);              // 添加我们定义好的红色样式
-    lv_obj_set_height(rect_left, lv_pct(100));               // 设置高度占满父容器
-    lv_obj_set_flex_grow(rect_left, 1);                      // 关键：设置其在 Flexbox 中占1份空间
-
-    // 中间的绿色矩形
-    lv_obj_t * rect_middle = lv_obj_create(main_container);
-    lv_obj_remove_style_all(rect_middle);
-    lv_obj_add_style(rect_middle, &style_green, 0);          // 添加绿色样式
-    lv_obj_set_height(rect_middle, lv_pct(100));
-    lv_obj_set_flex_grow(rect_middle, 1);                    // 关键：设置其也占1份空间
-
-    // 右边的红色矩形
-    lv_obj_t * rect_right = lv_obj_create(main_container);
-    lv_obj_remove_style_all(rect_right);
-    lv_obj_add_style(rect_right, &style_red, 0);             // 添加红色样式
-    lv_obj_set_height(rect_right, lv_pct(100));
-    lv_obj_set_flex_grow(rect_right, 1);                     // 关键：设置其也占1份空间
-}
 /* LVGL 初始化函数 */
 void lvgl_handler_init(void)
 {
@@ -407,9 +321,7 @@ void lvgl_handler_init(void)
     // 需要在获取互斥锁后调用，以确保线程安全
     if (pdTRUE == xSemaphoreTake(lvgl_mutex, portMAX_DELAY)) {
         // lvgl_handler_create_ui();
-        // lv_example_get_started_1();
-        // lv_example_canvas_7();
-        lvgl_handler_create_ui_rgb();
+        lv_example_get_started_1();
         xSemaphoreGive(lvgl_mutex);
     }
 }
