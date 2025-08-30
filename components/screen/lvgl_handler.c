@@ -216,18 +216,30 @@ static void lvgl_task(void *pvParameter)
 
 
 
+// void lv_example_get_started_1(void)
+// {
+//     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
+
+//     /*Create a white label, set its text and align it to the center*/
+//     lv_obj_t * label = lv_label_create(lv_screen_active());
+//     lv_label_set_text(label, "Hello world");
+//     lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0xffffff), LV_PART_MAIN);
+//     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+// }
 void lv_example_get_started_1(void)
 {
-    /*Change the active screen's background color*/
+    /* 更改活动屏幕的背景颜色 */
     lv_obj_set_style_bg_color(lv_screen_active(), lv_color_hex(0x003a57), LV_PART_MAIN);
 
-    /*Create a white label, set its text and align it to the center*/
+    /* 创建一个白色标签，设置文本并居中对齐 */
     lv_obj_t * label = lv_label_create(lv_screen_active());
     lv_label_set_text(label, "Hello world");
-    lv_obj_set_style_text_color(lv_screen_active(), lv_color_hex(0xffffff), LV_PART_MAIN);
+    
+    // 修正行：将文本颜色应用到 'label' 对象上，而不是屏幕上
+    lv_obj_set_style_text_color(label, lv_color_hex(0xffffff), LV_PART_MAIN);
+
     lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
 }
-
 
 
 void lv_example_style_8(void)
@@ -257,7 +269,26 @@ void lv_example_style_8(void)
 }
 
 
+void lv_study_ui(void)
+{
+    
+    // 1. 创建并初始化一个样式对象
+    static lv_style_t style;
+    lv_style_init(&style);
 
+    // 2. 配置这个样式对象的属性（例如，文本颜色为红色）
+    lv_style_set_text_color(&style, lv_color_hex(0xff0000)); // 红色
+
+    // 3. 创建一个标签对象
+    lv_obj_t * label = lv_label_create(lv_screen_active());
+    lv_label_set_text(label, "Hello world");
+
+    // 4. 【关键步骤】将配置好的样式应用到标签对象上
+    lv_obj_add_style(label, &style, 0);
+
+    // 5. 对齐标签
+    lv_obj_align(label, LV_ALIGN_CENTER, 0, 0);
+}
 
 
 
@@ -320,8 +351,9 @@ void lvgl_handler_init(void)
     // 10. 创建您的 UI
     // 需要在获取互斥锁后调用，以确保线程安全
     if (pdTRUE == xSemaphoreTake(lvgl_mutex, portMAX_DELAY)) {
-        // lvgl_handler_create_ui();
-        lv_example_get_started_1();
+        // lv_example_get_started_1();
+        lv_example_style_8();
+        // lv_study_ui();
         xSemaphoreGive(lvgl_mutex);
     }
 }

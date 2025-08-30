@@ -16,6 +16,7 @@ idf_component_register(
                         info
                         ble
                         screen
+                        sensor
                         
                     REQUIRES esp_driver_ledc
                     INCLUDE_DIRS ".")

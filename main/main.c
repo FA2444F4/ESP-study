@@ -14,6 +14,7 @@
 #include "u8g2_handler.h"
 #include "st7789v2_driver.h"
 #include "lvgl_handler.h"
+#include "mpu6050_handler.h"
 static const char *TAG = "MAIN";
 
 
@@ -27,11 +28,12 @@ void app_main(void)
     uart_handler_init();
     ble_handler_init();
     debug_utils_init();
+    mpu6050_handler_init();
 
     // u8g2_handler_init();//ssd1315 oled spi ok
     // st7789v2_driver_init(); st7789v2 lcd spi ok
     // st7789v2_driver_fill_with_rect_test(); st7789v2 lcd spi ok
-    lvgl_handler_init();
+    // lvgl_handler_init();
 
     ESP_LOGI(TAG, "All modules initialized.");
     while (1) {
