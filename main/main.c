@@ -29,8 +29,8 @@ void app_main(void)
     uart_handler_init();
     ble_handler_init();
     debug_utils_init();
-    // mpu6050_handler_init();
     wifi_handler_init();
+    mpu6050_handler_init();
 
     // u8g2_handler_init();//ssd1315 oled spi ok
     // st7789v2_driver_init(); st7789v2 lcd spi ok

@@ -6,11 +6,12 @@ idf_component_register(
                     PRIV_REQUIRES 
                         spi_flash 
                         esp_driver_gpio 
-                        led_strip 
                         esp_driver_uart 
                         nvs_flash
                         info
                         tool
                         esp_wifi
                         esp_event
+                        sensor
+                        json
                     INCLUDE_DIRS ".")

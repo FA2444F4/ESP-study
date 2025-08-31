@@ -4,6 +4,7 @@
 #include "esp_log.h"
 #include "driver/i2c.h"
 #include "mpu6050_handler.h"
+#include "wifi_handler.h"
 
 static const char *TAG = "MPU6050";
 
@@ -63,56 +64,57 @@ static esp_err_t mpu6050_register_write_byte(uint8_t reg_addr, uint8_t data)
     return i2c_master_write_to_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, write_buf, sizeof(write_buf), 1000 / portTICK_PERIOD_MS);
 }
 
-void mpu6050_handler_init(void)
+
+static void mpu6050_task(void *pvParameters)
 {
-    // 1. 初始化 I2C
-    ESP_ERROR_CHECK(i2c_master_init());
-    ESP_LOGI(TAG, "I2C initialized successfully");
-
-    // 2. 唤醒 MPU6050 (通过向电源管理寄存器写入0)
-    ESP_ERROR_CHECK(mpu6050_register_write_byte(MPU6050_PWR_MGMT_1_REG, 0));
-    ESP_LOGI(TAG, "MPU6050 wakeup successfully");
-
-    uint8_t data[14];
+    // 唤醒MPU6050
+    uint8_t write_buf[2] = {MPU6050_PWR_MGMT_1_REG, 0x00};
+    i2c_master_write_to_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, write_buf, sizeof(write_buf), pdMS_TO_TICKS(1000));
+    
+    uint8_t data_rd[14];
+    mpu6050_data_t sensor_data;
 
     while (1) {
-        esp_err_t ret_accel = mpu6050_register_read(MPU6050_ACCEL_XOUT_H_REG, data, 14);
-        if (ret_accel == ESP_OK) {
-            // 数据是16位有符号整数，高位在前 (Big Endian)
-            // 3. 读取加速度计原始数据
-            int16_t accel_x = (data[0] << 8) | data[1];
-            int16_t accel_y = (data[2] << 8) | data[3];
-            int16_t accel_z = (data[4] << 8) | data[5];
-            double a_x=accel_x/16384.0*9.80665;
-            double a_y=accel_y/16384.0*9.80665;
-            double a_z=accel_z/16384.0*9.80665;
-            // ESP_LOGI(TAG, "ACCEL_X: %d, ACCEL_Y: %d, ACCEL_Z: %d", accel_x, accel_y, accel_z);
-            ESP_LOGI(TAG, "ACCEL_X: %.2f, ACCEL_Y: %.2f, ACCEL_Z: %.2f", a_x, a_y, a_z);
+        // 1. 读取传感器原始数据
+        uint8_t reg_addr = MPU6050_ACCEL_XOUT_H_REG;
+        esp_err_t ret = i2c_master_write_read_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, &reg_addr, 1, data_rd, 14, pdMS_TO_TICKS(100));
 
-            // 4. 读取陀螺仪原始数据
-            int16_t gyro_x = (data[8] << 8) | data[9];
-            int16_t gyro_y = (data[10] << 8) | data[11];
-            int16_t gyro_z = (data[12] << 8) | data[13];
-            double g_x=gyro_x/131.0;
-                double g_y=gyro_y/131.0;
-            double g_z=gyro_z/131.0;
-            // ESP_LOGI(TAG, "GYRO_X: %d, GYRO_Y: %d, GYRO_Z: %d", gyro_x, gyro_y, gyro_z);
-            ESP_LOGI(TAG, "GYRO_X: %.2f, GYRO_Y: %.2f, GYRO_Z: %.2f", g_x, g_y, g_z);
-        } else {
-            ESP_LOGE(TAG, "Failed to read data");
+        if (ret == ESP_OK) {
+            // 2. 将原始数据转换为物理单位 (m/s^2 和 deg/s)
+            int16_t accel_x_raw = (data_rd[0] << 8) | data_rd[1];
+            int16_t accel_y_raw = (data_rd[2] << 8) | data_rd[3];
+            int16_t accel_z_raw = (data_rd[4] << 8) | data_rd[5];
+            
+            int16_t gyro_x_raw = (data_rd[8] << 8) | data_rd[9];
+            int16_t gyro_y_raw = (data_rd[10] << 8) | data_rd[11];
+            int16_t gyro_z_raw = (data_rd[12] << 8) | data_rd[13];
+
+            sensor_data.ax = (accel_x_raw / 16384.0f) * 9.80665f;
+            sensor_data.ay = (accel_y_raw / 16384.0f) * 9.80665f;
+            sensor_data.az = (accel_z_raw / 16384.0f) * 9.80665f;
+            sensor_data.gx = gyro_x_raw / 131.0f;
+            sensor_data.gy = gyro_y_raw / 131.0f;
+            sensor_data.gz = gyro_z_raw / 131.0f;
+
+            // 3. 将处理好的数据递交给Wi-Fi模块
+            //    我们不关心Wi-Fi是否连接，只管调用函数，让Wi-Fi模块自己去判断
+            wifi_handler_send_mpu_data(&sensor_data);
+
         }
 
-        
-        
-        
-        ESP_LOGI(TAG, "-------------------------------------------");
-
-        vTaskDelay(1000 / portTICK_PERIOD_MS); // 延时1秒
+        // 每100毫秒采集一次
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
-/*
+
+
+void mpu6050_handler_init(void)
+{
+    ESP_ERROR_CHECK(i2c_master_init());
+    xTaskCreate(mpu6050_task, "mpu6050_task", 4096, NULL, 5, NULL);
+    ESP_LOGI(TAG, "MPU6050 handler initialized.");
+}
 
 
 
 
-*/

@@ -33,6 +33,11 @@
     "random": "c",
     "system_info.h": "c",
     "wifi_handler.h": "c",
-    "cmd_defs.h": "c"
+    "cmd_defs.h": "c",
+    "err.h": "c",
+    "sockets.h": "c",
+    "cjson.h": "c",
+    "mpu6050_handler.h": "c",
+    "lvgl_handler.h": "c"
   }
 }

@@ -7,24 +7,28 @@
 #include "esp_event.h"
 #include "esp_log.h"
 #include "nvs_flash.h"
-
+#include "lwip/sockets.h"
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
-
+#include "cJSON.h"
 
 
 #include "wifi_handler.h"
+#include "mpu6050_handler.h"
 #include "system_info.h"
 
 /* --- 模块私有定义 --- */
-#define UDP_PORT       50001
+#define UDP_LISTEN_PORT       50001
 #define WIFI_CONNECT_TIMEOUT_MS  20000
 #define DISCOVERY_REQUEST_MSG  "DISCOVER_ESP32_REQUEST"  // PC广播的特定数据包内容
 #define DISCOVERY_RESPONSE_MSG "DISCOVER_ESP32_RESPONSE" // ESP32响应给PC的内容
 
-static const char *TAG = "WIFI_UDP_EXAMPLE";
+static const char *TAG = "WIFI_HANDLER";
+
+
+
 
 /* --- 模块私有全局变量 --- */
 static EventGroupHandle_t s_wifi_event_group;// 用于等待Wi-Fi连接成功的事件组
@@ -33,9 +37,12 @@ const static int WIFI_FAIL_BIT = BIT1;
 static volatile char s_ip_address[16] = "0.0.0.0";
 static char s_wifi_ssid[33] = {0};    
 static char s_wifi_password[65] = {0};
-static TaskHandle_t s_udp_task_handle = NULL;
 static QueueHandle_t s_wifi_cmd_queue = NULL;
-
+static TaskHandle_t s_udp_discovery_task_handle = NULL;
+static int s_udp_socket = -1; // 全局socket句柄
+static struct sockaddr_in s_target_addr; // 存储目标PC的地址
+static bool s_target_addr_valid = false; // 标记PC地址是否有效
+static SemaphoreHandle_t s_target_addr_mutex; // 保护目标地址的互斥锁
 
 
 // 定义一个结构体，用于在队列中传递命令及其响应所需的信息
@@ -47,40 +54,12 @@ typedef struct {
 
 /* --- 模块私有函数声明 --- */
 static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
-static void udp_discover_task(void *pvParameters);
-void wifi_connect(void);
-static void wifi_disconnect(void);
 static void wifi_control_task(void* arg);
 static const char* authmode_to_str(wifi_auth_mode_t authmode);
+static void udp_discovery_task(void *pvParameters);
 
 
 
-// 轻量级的连接函数
-void wifi_connect(void)
-{
-    // 将保存的SSID和密码配置到Wi-Fi驱动
-    wifi_config_t wifi_config = {0};
-    strncpy((char *)wifi_config.sta.ssid, s_wifi_ssid, sizeof(wifi_config.sta.ssid));
-    strncpy((char *)wifi_config.sta.password, s_wifi_password, sizeof(wifi_config.sta.password));
-    
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
-    ESP_ERROR_CHECK(esp_wifi_start());
-    ESP_LOGI(TAG, "Connecting to SSID: [%s]", s_wifi_ssid);
-}
-
-// 轻量级的断开函数
-static void wifi_disconnect(void)
-{
-    if (s_udp_task_handle != NULL) {
-        vTaskDelete(s_udp_task_handle);
-        s_udp_task_handle = NULL;
-    }
-    esp_wifi_disconnect();
-    esp_wifi_stop();
-    xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT | WIFI_FAIL_BIT);
-    strncpy((char*)s_ip_address, "0.0.0.0", sizeof(s_ip_address));
-    ESP_LOGI(TAG, "Wi-Fi has been disconnected and stopped.");
-}
 
 // --- 新增一个内部使用的、实际执行连接的函数 ---
 static void do_wifi_connect(cmd_responder_t responder, void* context)
@@ -109,8 +88,8 @@ static void do_wifi_connect(cmd_responder_t responder, void* context)
 
     if (bits & WIFI_CONNECTED_BIT) {
         snprintf(response_buffer, sizeof(response_buffer), "OK: Wi-Fi connected, IP: %s", (char*)s_ip_address);
-        if (s_udp_task_handle == NULL) {
-            xTaskCreate(udp_discover_task, "udp_discover_task", 3072, NULL, 5, &s_udp_task_handle);
+        if (s_udp_discovery_task_handle == NULL) {
+            xTaskCreate(udp_discovery_task, "udp_discovery_task", 4096, NULL, 5, &s_udp_discovery_task_handle);
         }
     } else {
         snprintf(response_buffer, sizeof(response_buffer), "FAIL: Wi-Fi connection failed or timed out.");
@@ -127,16 +106,146 @@ static void do_wifi_disconnect(cmd_responder_t responder, void* context)
         if (responder) responder("OK: Already disconnected", context);
         return;
     }
-    if (s_udp_task_handle != NULL) {
-        vTaskDelete(s_udp_task_handle);
-        s_udp_task_handle = NULL;
+    if (s_udp_discovery_task_handle != NULL) {
+        vTaskDelete(s_udp_discovery_task_handle);
+        s_udp_discovery_task_handle = NULL;
     }
+    // 确保socket被关闭
+    if (s_udp_socket >= 0) {
+        close(s_udp_socket);
+        s_udp_socket = -1;
+    }
+    // 使目标地址无效
+    xSemaphoreTake(s_target_addr_mutex, portMAX_DELAY);
+    s_target_addr_valid = false;
+    xSemaphoreGive(s_target_addr_mutex);
     esp_wifi_disconnect();
     esp_wifi_stop();
     if (responder) responder("OK: Wi-Fi disconnected", context);
 }
 
+// 这是新的UDP发现任务
+static void udp_discovery_task(void *pvParameters)
+{
+    char rx_buffer[128];
+    struct sockaddr_in listen_addr;
+    
+    listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    listen_addr.sin_family = AF_INET;
+    listen_addr.sin_port = htons(UDP_LISTEN_PORT);
+    
+    // 如果全局socket未创建，则创建它
+    if (s_udp_socket < 0) {
+        s_udp_socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+        if (s_udp_socket < 0) {
+            ESP_LOGE(TAG, "UDP: Unable to create socket");
+            goto DISCOVERY_TASK_CLEANUP;
+        }
+        
+        if (bind(s_udp_socket, (struct sockaddr *)&listen_addr, sizeof(listen_addr)) < 0) {
+            ESP_LOGE(TAG, "UDP: Socket unable to bind");
+            close(s_udp_socket);
+            s_udp_socket = -1;
+            goto DISCOVERY_TASK_CLEANUP;
+        }
+    }
+    ESP_LOGI(TAG, "UDP discovery listener started on port %d", UDP_LISTEN_PORT);
+
+    while (1) {
+        struct sockaddr_in source_addr;
+        socklen_t socklen = sizeof(source_addr);
+        int len = recvfrom(s_udp_socket, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
+
+        if (len > 0) {
+            rx_buffer[len] = 0;
+            cJSON *root = cJSON_Parse(rx_buffer);
+            if (root) {//建立连接指令{"command": "discover", "report_port": 50001}
+                cJSON *cmd = cJSON_GetObjectItem(root, "command");
+                cJSON *port = cJSON_GetObjectItem(root, "report_port");
+                
+                if (cJSON_IsString(cmd) && (strcmp(cmd->valuestring, "discover") == 0) && cJSON_IsNumber(port)) {
+                    // --- 线程安全地更新目标地址 ---
+                    xSemaphoreTake(s_target_addr_mutex, portMAX_DELAY);
+                    memcpy(&s_target_addr, &source_addr, sizeof(source_addr));
+                    s_target_addr.sin_port = htons(port->valueint);
+                    s_target_addr_valid = true;
+                    xSemaphoreGive(s_target_addr_mutex);
+                    // --- 更新结束 ---
+                    
+                    char addr_str[32];
+                    inet_ntoa_r(s_target_addr.sin_addr, addr_str, sizeof(addr_str) - 1);
+                    ESP_LOGI(TAG, "Discovery packet received. Target PC updated to: %s:%d", addr_str, port->valueint);
+                }
+                cJSON_Delete(root);
+            }
+        }
+    }
+
+    DISCOVERY_TASK_CLEANUP:
+        s_udp_discovery_task_handle = NULL;
+        vTaskDelete(NULL);
+}
+
+void wifi_handler_send_mpu_data(const mpu6050_data_t* data)
+{
+    // 1. 检查Wi-Fi是否连接
+    if (!(xEventGroupGetBits(s_wifi_event_group) & WIFI_CONNECTED_BIT)) {
+        return;
+    }
+    // 2. 准备局部变量
+    struct sockaddr_in target_addr_copy;
+    bool is_valid = false;
+
+    // 3. 线程安全地读取目标地址
+    if (xSemaphoreTake(s_target_addr_mutex, 0) == pdTRUE) {
+        is_valid = s_target_addr_valid;
+        if (is_valid) {
+            memcpy(&target_addr_copy, &s_target_addr, sizeof(s_target_addr));
+        }
+        xSemaphoreGive(s_target_addr_mutex);
+    } else {
+        // 如果锁被占用（例如udp_listen_task正在更新地址），这次就跳过发送
+        return;
+    }
+    // 4. 检查目标地址和socket的有效性
+    if (!is_valid) {
+        return;
+    }
+    if (s_udp_socket < 0) {
+        return;
+    }
+    // 5. 创建JSON对象并发送数据
+    cJSON *root = cJSON_CreateObject();
+    if (root == NULL) {
+        return;
+    }
+    // 使用 cJSON_AddNumberToObject 来添加浮点数
+    // 注意：ESP-IDF的cJSON版本可能需要 (double) 类型转换
+    cJSON_AddNumberToObject(root, "ax", (double)data->ax);
+    cJSON_AddNumberToObject(root, "ay", (double)data->ay);
+    cJSON_AddNumberToObject(root, "az", (double)data->az);
+    cJSON_AddNumberToObject(root, "gx", (double)data->gx);
+    cJSON_AddNumberToObject(root, "gy", (double)data->gy);
+    cJSON_AddNumberToObject(root, "gz", (double)data->gz);
+
+    char *json_string = cJSON_PrintUnformatted(root);
+    if (json_string) {
+        // 准备一个缓冲区来保存目标IP地址的字符串形式
+        char target_ip_str[16];
+        inet_ntoa_r(target_addr_copy.sin_addr, target_ip_str, sizeof(target_ip_str));
+        int sent_len = sendto(s_udp_socket, json_string, strlen(json_string), 0, (struct sockaddr *)&target_addr_copy, sizeof(target_addr_copy));
+        free(json_string);
+    } else {
+        ESP_LOGE(TAG, "Send failed: cJSON_PrintUnformatted returned NULL.");
+    }
+    
+    cJSON_Delete(root);
+}
+
+
 void wifi_handler_init(void){
+    // 创建互斥锁
+    s_target_addr_mutex = xSemaphoreCreateMutex();
     // 2. 创建事件组
     s_wifi_event_group = xEventGroupCreate();
 
@@ -309,6 +418,12 @@ static void event_handler(void* arg
         ESP_LOGE(TAG, "Wi-Fi Disconnected. Reason: %d", event->reason);
         strncpy((char*)s_ip_address, "0.0.0.0", sizeof(s_ip_address));
         xEventGroupClearBits(s_wifi_event_group, WIFI_CONNECTED_BIT);//熄灭WIFI_CONNECTED_BIT
+        // Wi-Fi断开，必须停止发现任务并使目标地址无效
+        if (s_udp_discovery_task_handle != NULL) {
+            vTaskDelete(s_udp_discovery_task_handle);
+            s_udp_discovery_task_handle = NULL;
+        }
+        
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         //Wi-Fi Station (客户端模式) 成功获取到了IP地址
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
@@ -318,67 +433,6 @@ static void event_handler(void* arg
     }
 }
 
-
-//监听并响应PC的广播
-static void udp_discover_task(void *pvParameters)
-{
-    char rx_buffer[128];
-    char addr_str[128];
-    int addr_family = AF_INET;
-    int ip_protocol = IPPROTO_IP;
-    struct sockaddr_in dest_addr;
-
-    dest_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-    dest_addr.sin_family = AF_INET;
-    dest_addr.sin_port = htons(UDP_PORT);
-    
-    int sock = socket(addr_family, SOCK_DGRAM, ip_protocol);
-    if (sock < 0) {
-        ESP_LOGE(TAG, "Unable to create socket: errno %d", errno);
-        goto UDP_TASK_CLEANUP;
-    }
-    ESP_LOGI(TAG, "Socket created");
-
-    int err = bind(sock, (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-    if (err < 0) {
-        ESP_LOGE(TAG, "Socket unable to bind: errno %d", errno);
-        goto UDP_TASK_CLEANUP;
-    }
-    ESP_LOGI(TAG, "Socket bound, port %d", UDP_PORT);
-    ESP_LOGI(TAG, "Ready to receive broadcast messages...");
-
-    while (1) {
-        struct sockaddr_storage source_addr;
-        socklen_t socklen = sizeof(source_addr);
-        int len = recvfrom(sock, rx_buffer, sizeof(rx_buffer) - 1, 0, (struct sockaddr *)&source_addr, &socklen);
-
-        if (len < 0) {
-            ESP_LOGE(TAG, "recvfrom failed: errno %d", errno);
-            break;
-        } else {
-            rx_buffer[len] = 0; 
-            inet_ntoa_r(((struct sockaddr_in *)&source_addr)->sin_addr, addr_str, sizeof(addr_str) - 1);
-            ESP_LOGI(TAG, "Received %d bytes from %s:", len, addr_str);
-            ESP_LOGI(TAG, "%s", rx_buffer);
-
-            if (strcmp(rx_buffer, DISCOVERY_REQUEST_MSG) == 0) {
-                ESP_LOGI(TAG, "Discovery request received. Sending response...");
-                int err = sendto(sock, DISCOVERY_RESPONSE_MSG, strlen(DISCOVERY_RESPONSE_MSG), 0, (struct sockaddr *)&source_addr, sizeof(source_addr));
-                if (err < 0) {
-                    ESP_LOGE(TAG, "Error occurred during sending: errno %d", errno);
-                } else {
-                    ESP_LOGI(TAG, "Response sent successfully.");
-                }
-            }
-        }
-    }
-
-UDP_TASK_CLEANUP:
-    ESP_LOGI(TAG, "UDP Task cleaning up...");
-    close(sock);
-    // 注意：这里不需要将g_udp_task_handle设为NULL，因为删除任务的代码在button_control_task中
-    vTaskDelete(NULL);
-}
 
 
 // --- 新增：辅助函数，将加密模式转换为字符串 ---

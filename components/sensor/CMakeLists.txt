@@ -10,4 +10,5 @@ idf_component_register(
                         esp_driver_i2c
                         tool
                         driver
+                        wifi
                     INCLUDE_DIRS ".")
