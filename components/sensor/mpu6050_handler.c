@@ -76,31 +76,43 @@ void mpu6050_handler_init(void)
     uint8_t data[14];
 
     while (1) {
-        // 3. 读取加速度计原始数据
-        esp_err_t ret_accel = mpu6050_register_read(MPU6050_ACCEL_XOUT_H_REG, data, 6);
+        esp_err_t ret_accel = mpu6050_register_read(MPU6050_ACCEL_XOUT_H_REG, data, 14);
         if (ret_accel == ESP_OK) {
             // 数据是16位有符号整数，高位在前 (Big Endian)
+            // 3. 读取加速度计原始数据
             int16_t accel_x = (data[0] << 8) | data[1];
             int16_t accel_y = (data[2] << 8) | data[3];
             int16_t accel_z = (data[4] << 8) | data[5];
-            ESP_LOGI(TAG, "ACCEL_X: %d, ACCEL_Y: %d, ACCEL_Z: %d", accel_x, accel_y, accel_z);
+            double a_x=accel_x/16384.0*9.80665;
+            double a_y=accel_y/16384.0*9.80665;
+            double a_z=accel_z/16384.0*9.80665;
+            // ESP_LOGI(TAG, "ACCEL_X: %d, ACCEL_Y: %d, ACCEL_Z: %d", accel_x, accel_y, accel_z);
+            ESP_LOGI(TAG, "ACCEL_X: %.2f, ACCEL_Y: %.2f, ACCEL_Z: %.2f", a_x, a_y, a_z);
+
+            // 4. 读取陀螺仪原始数据
+            int16_t gyro_x = (data[8] << 8) | data[9];
+            int16_t gyro_y = (data[10] << 8) | data[11];
+            int16_t gyro_z = (data[12] << 8) | data[13];
+            double g_x=gyro_x/131.0;
+                double g_y=gyro_y/131.0;
+            double g_z=gyro_z/131.0;
+            // ESP_LOGI(TAG, "GYRO_X: %d, GYRO_Y: %d, GYRO_Z: %d", gyro_x, gyro_y, gyro_z);
+            ESP_LOGI(TAG, "GYRO_X: %.2f, GYRO_Y: %.2f, GYRO_Z: %.2f", g_x, g_y, g_z);
         } else {
-            ESP_LOGE(TAG, "Failed to read accelerometer data");
+            ESP_LOGE(TAG, "Failed to read data");
         }
 
-        // 4. 读取陀螺仪原始数据
-        esp_err_t ret_gyro = mpu6050_register_read(MPU6050_GYRO_XOUT_H_REG, data, 6);
-        if (ret_gyro == ESP_OK) {
-            int16_t gyro_x = (data[0] << 8) | data[1];
-            int16_t gyro_y = (data[2] << 8) | data[3];
-            int16_t gyro_z = (data[4] << 8) | data[5];
-            ESP_LOGI(TAG, "GYRO_X: %d, GYRO_Y: %d, GYRO_Z: %d", gyro_x, gyro_y, gyro_z);
-        } else {
-            ESP_LOGE(TAG, "Failed to read gyroscope data");
-        }
+        
+        
         
         ESP_LOGI(TAG, "-------------------------------------------");
 
         vTaskDelay(1000 / portTICK_PERIOD_MS); // 延时1秒
     }
 }
+/*
+
+
+
+
+*/
