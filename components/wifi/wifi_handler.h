@@ -2,7 +2,12 @@
 #define WIFI_HANDLER_H
 #include "cmd_defs.h"
 
-
+// --- 模块内部使用的数据结构 ---
+typedef enum {
+    CMD_TYPE_CONNECT,
+    CMD_TYPE_DISCONNECT,
+    CMD_TYPE_SCAN,
+} wifi_cmd_type_t;// 定义可以发送给 Wi-Fi 控制任务的命令类型
 
 /**
  * @brief 初始化Wi-Fi处理模块

@@ -63,9 +63,11 @@ void system_info_init(void)
     switch (err){
         case ESP_OK:
             ESP_LOGI(TAG, "wifi name loaded from NVS: %s", s_system_info.wifi_name);
+            break;
         case ESP_ERR_NVS_NOT_FOUND:
             ESP_LOGW(TAG, "wifi name not found in NVS, setting to default.");
             strcpy(s_system_info.wifi_name, "NOT_SET");
+            break;
         default:
             ESP_LOGE(TAG,"Error (%s) reading wifi name from NVS!", esp_err_to_name(err));
     }
@@ -75,9 +77,11 @@ void system_info_init(void)
     switch (err){
         case ESP_OK:
             ESP_LOGI(TAG, "wifi password loaded from NVS: %s", s_system_info.wifi_password);
+            break;   
         case ESP_ERR_NVS_NOT_FOUND:
             ESP_LOGW(TAG, "wifi password not found in NVS, setting to default.");
             strcpy(s_system_info.wifi_password, "NOT_SET");
+            break;
         default:
             ESP_LOGE(TAG,"Error (%s) reading wifi password from NVS!", esp_err_to_name(err));
     }

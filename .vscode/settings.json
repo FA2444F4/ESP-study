@@ -30,6 +30,9 @@
     "format": "c",
     "cstdlib": "c",
     "netdb.h": "c",
-    "random": "c"
+    "random": "c",
+    "system_info.h": "c",
+    "wifi_handler.h": "c",
+    "cmd_defs.h": "c"
   }
 }
