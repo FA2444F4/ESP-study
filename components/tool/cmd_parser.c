@@ -7,6 +7,7 @@
 #include "led_control.h"
 #include "system_info.h"
 #include "debug_utils.h"
+#include "wifi_handler.h"
 
 
 static const char *TAG = "CMD_PARSER";
@@ -58,6 +59,8 @@ static const cmd_entry_t cmd_table[] = {
     {"test_device_set_wifi_name",  system_info_cmd_handler},
     {"test_device_get_wifi_password",  system_info_cmd_handler},
     {"test_device_set_wifi_password",  system_info_cmd_handler},
+    {"test_device_get_wifi_ip",  wifi_cmd_handler},
+    {"test_device_set_wifi_connect",  wifi_cmd_handler},
     {"debug_",  debug_utils_cmd_handler},
     {NULL, NULL} // 表结束的标记
 };

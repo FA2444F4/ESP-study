@@ -1,5 +1,4 @@
-
-file(GLOB SRCS "main.c" "*.c")
+file(GLOB SRCS  "*.c")
 
 idf_component_register(
                     SRCS ${SRCS}
@@ -10,16 +9,8 @@ idf_component_register(
                         led_strip 
                         esp_driver_uart 
                         nvs_flash
-                        bt
-                        led
-                        uart
                         info
-                        ble
-                        screen
-                        sensor
-                        wifi
-                        
-                    REQUIRES esp_driver_ledc
+                        tool
+                        esp_wifi
+                        esp_event
                     INCLUDE_DIRS ".")
-
-

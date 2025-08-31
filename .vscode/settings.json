@@ -25,6 +25,11 @@
     "lvgl.h": "c",
     "string.h": "c",
     "stdio.h": "c",
-    "i2c.h": "c"
+    "i2c.h": "c",
+    "complex": "c",
+    "format": "c",
+    "cstdlib": "c",
+    "netdb.h": "c",
+    "random": "c"
   }
 }

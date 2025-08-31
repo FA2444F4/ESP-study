@@ -12,5 +12,6 @@ idf_component_register(
                         esp_driver_ledc
                         info
                         led
+                        wifi
                     REQUIRES debug
                     INCLUDE_DIRS ".")
