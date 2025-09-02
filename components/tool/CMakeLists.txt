@@ -1,4 +1,4 @@
-file(GLOB SRCS "cmd_parser.c" "*.c")
+file(GLOB SRCS  "*.c")
 
 idf_component_register(
                     SRCS ${SRCS}
