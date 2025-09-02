@@ -56,6 +56,6 @@ void uart_handler_init(void)
     ESP_ERROR_CHECK(uart_driver_install(UART_NUM, UART_RX_BUF_SIZE * 2, 0, 0, NULL, 0));
 
     // 创建任务来处理 UART 数据
-    xTaskCreate(uart_rx_task, "uart_rx_task", 2048, NULL, 5, NULL);
+    xTaskCreate(uart_rx_task, "uart_rx_task", 4096, NULL, 5, NULL);
     ESP_LOGI(TAG, "UART handler initialized and task started.");
 }

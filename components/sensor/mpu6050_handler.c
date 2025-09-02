@@ -5,6 +5,7 @@
 #include "driver/i2c.h"
 #include "mpu6050_handler.h"
 #include "wifi_handler.h"
+#include "system_info.h"
 
 static const char *TAG = "MPU6050";
 
@@ -23,6 +24,9 @@ static const char *TAG = "MPU6050";
 #define MPU6050_GYRO_XOUT_H_REG     0x43    // 陀螺仪数据起始地址
 
 static TaskHandle_t s_mpu6050_task_handle=NULL;
+static float gyro_offset_x=0;
+static float gyro_offset_y=0;
+static float gyro_offset_z=0;
 
 /**
  * @brief 初始化I2C总线
@@ -66,55 +70,96 @@ static esp_err_t mpu6050_register_write_byte(uint8_t reg_addr, uint8_t data)
     return i2c_master_write_to_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, write_buf, sizeof(write_buf), 1000 / portTICK_PERIOD_MS);
 }
 
+static esp_err_t mpu6050_collect(mpu6050_data_t *sensor_data){
+    if(sensor_data==NULL)return ESP_ERR_INVALID_ARG;
+    uint8_t data_rd[14];
+    const uint8_t reg_addr = MPU6050_ACCEL_XOUT_H_REG;
+    esp_err_t ret = i2c_master_write_read_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, &reg_addr, 1, data_rd, 14, pdMS_TO_TICKS(100));
+    if(ret!=ESP_OK){
+        ESP_LOGE(TAG, "Failed to read raw data from MPU6050");
+        return ret; // 如果读取失败，直接返回错误码
+    }
+    int16_t accel_x_raw = (data_rd[0] << 8) | data_rd[1];
+    int16_t accel_y_raw = (data_rd[2] << 8) | data_rd[3];
+    int16_t accel_z_raw = (data_rd[4] << 8) | data_rd[5];
+    
+    int16_t gyro_x_raw = (data_rd[8] << 8) | data_rd[9];
+    int16_t gyro_y_raw = (data_rd[10] << 8) | data_rd[11];
+    int16_t gyro_z_raw = (data_rd[12] << 8) | data_rd[13];
+
+    sensor_data->ax = (accel_x_raw / 16384.0f) * 9.80665f;
+    sensor_data->ay = (accel_y_raw / 16384.0f) * 9.80665f;
+    sensor_data->az = (accel_z_raw / 16384.0f) * 9.80665f;
+    sensor_data->gx = gyro_x_raw / 131.0f;
+    sensor_data->gy = gyro_y_raw / 131.0f;
+    sensor_data->gz = gyro_z_raw / 131.0f;
+    return ESP_OK;
+}
 
 static void mpu6050_task(void *pvParameters)
 {
     // 唤醒MPU6050
     uint8_t write_buf[2] = {MPU6050_PWR_MGMT_1_REG, 0x00};
     i2c_master_write_to_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, write_buf, sizeof(write_buf), pdMS_TO_TICKS(1000));
-    
-    uint8_t data_rd[14];
+   
+    // 在任务开始前，从 system_info 获取一次校准值
+    system_info_get_gyro_offsets(&gyro_offset_x, &gyro_offset_y, &gyro_offset_z);
     mpu6050_data_t sensor_data;
 
     while (1) {
-        // 1. 读取传感器原始数据
-        uint8_t reg_addr = MPU6050_ACCEL_XOUT_H_REG;
-        esp_err_t ret = i2c_master_write_read_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, &reg_addr, 1, data_rd, 14, pdMS_TO_TICKS(100));
-
-        if (ret == ESP_OK) {
-            // 2. 将原始数据转换为物理单位 (m/s^2 和 deg/s)
-            int16_t accel_x_raw = (data_rd[0] << 8) | data_rd[1];
-            int16_t accel_y_raw = (data_rd[2] << 8) | data_rd[3];
-            int16_t accel_z_raw = (data_rd[4] << 8) | data_rd[5];
-            
-            int16_t gyro_x_raw = (data_rd[8] << 8) | data_rd[9];
-            int16_t gyro_y_raw = (data_rd[10] << 8) | data_rd[11];
-            int16_t gyro_z_raw = (data_rd[12] << 8) | data_rd[13];
-
-            sensor_data.ax = (accel_x_raw / 16384.0f) * 9.80665f;
-            sensor_data.ay = (accel_y_raw / 16384.0f) * 9.80665f;
-            sensor_data.az = (accel_z_raw / 16384.0f) * 9.80665f;
-            sensor_data.gx = gyro_x_raw / 131.0f;
-            sensor_data.gy = gyro_y_raw / 131.0f;
-            sensor_data.gz = gyro_z_raw / 131.0f;
-
-            // 3. 将处理好的数据递交给Wi-Fi模块
-            //    我们不关心Wi-Fi是否连接，只管调用函数，让Wi-Fi模块自己去判断
+        if(mpu6050_collect(&sensor_data)==ESP_OK){
+            sensor_data.gx-=gyro_offset_x;
+            sensor_data.gy-=gyro_offset_y;
+            sensor_data.gz-=gyro_offset_z;
             wifi_handler_send_mpu_data(&sensor_data);
-
+        }else{
+            ESP_LOGE(TAG, "Could not read sensor data in main task.");
         }
-
-        // 每100毫秒采集一次
         vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
+esp_err_t mpu6050_calibrate_gyro(void){
+    ESP_LOGI(TAG, "Starting gyroscope calibration... Keep the device stable!");
+    vTaskDelay(pdMS_TO_TICKS(1000)); // 等待1秒让设备稳定
+    const int num_samples=500;
+    double sum_gx=0.0f,sum_gy=0.0f,sum_gz=0.0f;
+    mpu6050_data_t raw_data;
+    // 唤醒MPU6050
+    uint8_t write_buf[2] = {MPU6050_PWR_MGMT_1_REG, 0x00};
+    i2c_master_write_to_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, write_buf, sizeof(write_buf), pdMS_TO_TICKS(1000));
+    for(int i=0;i<num_samples;i++){
+        if(mpu6050_collect(&raw_data)==ESP_OK){
+            sum_gx+=raw_data.gx;
+            sum_gy+=raw_data.gy;
+            sum_gz+=raw_data.gz;
+        }
+        vTaskDelay(pdMS_TO_TICKS(5));
+    }
+    gyro_offset_x=sum_gx/num_samples;
+    gyro_offset_y=sum_gy/num_samples;
+    gyro_offset_z=sum_gz/num_samples;
+    ESP_LOGI(TAG, "Calibration finished. Calculated offsets [deg/s]:");
+    ESP_LOGI(TAG, "X: %.4f, Y: %.4f, Z: %.4f", gyro_offset_x, gyro_offset_y, gyro_offset_z);
+    esp_err_t err=system_info_set_gyro_offsets(gyro_offset_x, gyro_offset_y, gyro_offset_z);
+    if (err == ESP_OK) {
+        ESP_LOGI(TAG, "New offsets saved to NVS successfully.");
+        return ESP_OK;
+    } else {
+        ESP_LOGE(TAG, "Failed to save new offsets to NVS.");
+        return ESP_FAIL;
+    }
+}
 
 void mpu6050_handler_init(void)
 {
     ESP_ERROR_CHECK(i2c_master_init());
+    //读取偏移值
+    system_info_get_gyro_offsets(&gyro_offset_x,&gyro_offset_y,&gyro_offset_z);
     ESP_LOGI(TAG, "MPU6050 handler initialized.");
 }
+
+
 
 void mpu6050_cmd_handler(const char *command, const char *args,cmd_responder_t responder, void *context){
     //命令 test_device_set_mpu6050=on/off
@@ -130,6 +175,22 @@ void mpu6050_cmd_handler(const char *command, const char *args,cmd_responder_t r
             vTaskDelete(s_mpu6050_task_handle);
             responder("mpu6050 task off", context);
         }
+        return;
+    }
+    //命令 test_device_get_mpu6050_gypo_offset
+    if (strcmp(command, "test_device_get_mpu6050_gypo_offset") == 0){
+        char buffer[128];
+        snprintf(buffer,sizeof(buffer),"X: %.4f, Y: %.4f, Z: %.4f", gyro_offset_x, gyro_offset_y, gyro_offset_z);
+        responder(buffer, context);
+        return;
+    }
+    //命令 test_device_set_mpu6050_calibrate_gyro
+    if (strcmp(command, "test_device_set_mpu6050_calibrate_gyro") == 0){
+        mpu6050_calibrate_gyro();
+        char buffer[128];
+        snprintf(buffer,sizeof(buffer),"X: %.4f, Y: %.4f, Z: %.4f", gyro_offset_x, gyro_offset_y, gyro_offset_z);
+        responder(buffer, context);
+        return;
     }
 }
 

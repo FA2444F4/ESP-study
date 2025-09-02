@@ -11,4 +11,5 @@ idf_component_register(
                         tool
                         driver
                         wifi
+                        info
                     INCLUDE_DIRS ".")

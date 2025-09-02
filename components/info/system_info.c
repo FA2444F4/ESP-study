@@ -10,6 +10,9 @@
 #define SN_KEY "device_sn"           // SN号在NVS中存储的键
 #define WIFI_NAME_KEY "wifi_name"
 #define WIFI_PASSWORD_KEY "wifi_password"
+#define GYRO_OFFSET_X_KEY "gyro_off_x"
+#define GYRO_OFFSET_Y_KEY "gyro_off_y"
+#define GYRO_OFFSET_Z_KEY "gyro_off_z"
 
 
 static const char *TAG = "SYSTEM_INFO";
@@ -19,6 +22,10 @@ typedef struct {
     char serial_number[13];//SN // 预留12个字符 + 1个结束符
     char wifi_name[20];
     char wifi_password[20];
+    //陀螺仪校准值
+    float gyro_offset_x;
+    float gyro_offset_y;
+    float gyro_offset_z;
 } system_info_t;
 
 static system_info_t s_system_info;
@@ -85,6 +92,27 @@ void system_info_init(void)
         default:
             ESP_LOGE(TAG,"Error (%s) reading wifi password from NVS!", esp_err_to_name(err));
     }
+    //读取角速度偏移值x
+    required_size=sizeof(s_system_info.gyro_offset_x);
+    err=nvs_get_blob(my_handle,GYRO_OFFSET_X_KEY,&s_system_info.gyro_offset_x,&required_size);
+    if(err==ESP_ERR_NVS_NOT_FOUND){
+        ESP_LOGW(TAG,"Gyro X offset not found, defaulting to 0.0");
+        s_system_info.gyro_offset_x=0.0f;
+    }
+    //读取角速度偏移值y
+    required_size=sizeof(s_system_info.gyro_offset_y);
+    err=nvs_get_blob(my_handle,GYRO_OFFSET_Y_KEY,&s_system_info.gyro_offset_y,&required_size);
+    if(err==ESP_ERR_NVS_NOT_FOUND){
+        ESP_LOGW(TAG,"Gyro Y offset not found, defaulting to 0.0");
+        s_system_info.gyro_offset_y=0.0f;
+    }
+    //读取角速度偏移值z
+    required_size=sizeof(s_system_info.gyro_offset_z);
+    err=nvs_get_blob(my_handle,GYRO_OFFSET_Z_KEY,&s_system_info.gyro_offset_z,&required_size);
+    if(err==ESP_ERR_NVS_NOT_FOUND){
+        ESP_LOGW(TAG,"Gyro Z offset not found, defaulting to 0.0");
+        s_system_info.gyro_offset_z=0.0f;
+    }
 
 
     // 4. 关闭 NVS 句柄
@@ -104,7 +132,12 @@ const char* system_info_get_wifi_password(void)
 {
     return s_system_info.wifi_password;
 }
-
+void system_info_get_gyro_offsets(float* offset_x, float* offset_y, float* offset_z)
+{
+    if (offset_x) *offset_x = s_system_info.gyro_offset_x;
+    if (offset_y) *offset_y = s_system_info.gyro_offset_y;
+    if (offset_z) *offset_z = s_system_info.gyro_offset_z;
+}
 
 //设置sn
 esp_err_t system_info_set_sn(const char* sn)
@@ -140,7 +173,7 @@ esp_err_t system_info_set_sn(const char* sn)
     
     return err;
 }
-
+//设置wifi名
 esp_err_t system_info_set_wifi_name(const char* wifi_name)
 {
     if (wifi_name == NULL || strlen(wifi_name) >= sizeof(s_system_info.wifi_name)) {
@@ -160,7 +193,7 @@ esp_err_t system_info_set_wifi_name(const char* wifi_name)
     }
     return err;
 }
-
+//设置wifi密码
 esp_err_t system_info_set_wifi_password(const char* wifi_password)
 {
     if (wifi_password == NULL || strlen(wifi_password) >= sizeof(s_system_info.wifi_password)) {
@@ -179,6 +212,33 @@ esp_err_t system_info_set_wifi_password(const char* wifi_password)
         ESP_LOGE(TAG, "Failed to set wifi password in NVS (%s)", esp_err_to_name(err));
     }
     return err;
+}
+//设置陀螺仪校准值
+esp_err_t system_info_set_gyro_offsets(float offset_x, float offset_y, float offset_z){
+    nvs_handle_t my_handle;
+    esp_err_t err = nvs_open(STORAGE_NAMESPACE, NVS_READWRITE, &my_handle);
+    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open NVS handle for writing offsets.");
+        return err;
+    }
+    err=nvs_set_blob(my_handle,GYRO_OFFSET_X_KEY,&offset_x,sizeof(offset_x));
+    if(err!=ESP_OK) goto handle_error;
+    err=nvs_set_blob(my_handle,GYRO_OFFSET_Y_KEY,&offset_y,sizeof(offset_y));
+    if(err!=ESP_OK) goto handle_error;
+    err=nvs_set_blob(my_handle,GYRO_OFFSET_Z_KEY,&offset_z,sizeof(offset_z));
+    if(err!=ESP_OK) goto handle_error;
+    
+    s_system_info.gyro_offset_x=offset_x;
+    s_system_info.gyro_offset_y=offset_y;
+    s_system_info.gyro_offset_z=offset_z;
+    ESP_LOGI(TAG, "Gyro offsets have been saved to NVS and updated in RAM.");
+
+    handle_error:
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to set gyro offsets in NVS (%s)", esp_err_to_name(err));
+        }
+        nvs_close(my_handle);
+        return err;
 }
 
 //命令解析
@@ -236,4 +296,5 @@ void system_info_cmd_handler(const char *command, const char *args,cmd_responder
             responder("Error: Missing value for set wifi password.", context);
         }
     }
+    
 }
