@@ -13,5 +13,6 @@ idf_component_register(
                         info
                         led
                         wifi
+                        sensor
                     REQUIRES debug
                     INCLUDE_DIRS ".")

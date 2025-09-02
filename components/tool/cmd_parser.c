@@ -8,6 +8,7 @@
 #include "system_info.h"
 #include "debug_utils.h"
 #include "wifi_handler.h"
+#include "mpu6050_handler.h"
 
 
 static const char *TAG = "CMD_PARSER";

@@ -22,6 +22,8 @@ static const char *TAG = "MPU6050";
 #define MPU6050_ACCEL_XOUT_H_REG    0x3B    // 加速度计数据起始地址
 #define MPU6050_GYRO_XOUT_H_REG     0x43    // 陀螺仪数据起始地址
 
+static TaskHandle_t s_mpu6050_task_handle=NULL;
+
 /**
  * @brief 初始化I2C总线
  */
@@ -111,10 +113,24 @@ static void mpu6050_task(void *pvParameters)
 void mpu6050_handler_init(void)
 {
     ESP_ERROR_CHECK(i2c_master_init());
-    xTaskCreate(mpu6050_task, "mpu6050_task", 4096, NULL, 5, NULL);
     ESP_LOGI(TAG, "MPU6050 handler initialized.");
 }
 
-
+void mpu6050_cmd_handler(const char *command, const char *args,cmd_responder_t responder, void *context){
+    //命令 test_device_set_mpu6050=on/off
+    if (strcmp(command, "test_device_set_mpu6050") == 0){
+        if (args == NULL) {
+            ESP_LOGE(TAG, "缺少参数on/off");
+            return;
+        }
+        if (strcmp(args, "on") == 0) {
+            xTaskCreate(mpu6050_task, "mpu6050_task", 4096, NULL, 5, &s_mpu6050_task_handle);
+            responder("mpu6050 task on", context);
+        } else if (strcmp(args, "off") == 0) {
+            vTaskDelete(s_mpu6050_task_handle);
+            responder("mpu6050 task off", context);
+        }
+    }
+}
 
 
