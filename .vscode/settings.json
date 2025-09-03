@@ -39,6 +39,7 @@
     "cjson.h": "c",
     "mpu6050_handler.h": "c",
     "lvgl_handler.h": "c",
-    "debug_utils.h": "c"
+    "debug_utils.h": "c",
+    "mcpwm_prelude.h": "c"
   }
 }

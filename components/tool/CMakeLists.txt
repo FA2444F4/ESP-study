@@ -14,5 +14,6 @@ idf_component_register(
                         led
                         wifi
                         sensor
+                        motor
                     REQUIRES debug
                     INCLUDE_DIRS ".")

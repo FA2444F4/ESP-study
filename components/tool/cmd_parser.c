@@ -9,6 +9,7 @@
 #include "debug_utils.h"
 #include "wifi_handler.h"
 #include "mpu6050_handler.h"
+#include "sg90_control.h"
 
 
 static const char *TAG = "CMD_PARSER";
@@ -66,6 +67,7 @@ static const cmd_entry_t cmd_table[] = {
     {"test_device_set_mpu6050",  mpu6050_cmd_handler},
     {"test_device_get_mpu6050_gypo_offset",  mpu6050_cmd_handler},
     {"test_device_set_mpu6050_calibrate_gyro",  mpu6050_cmd_handler},
+    {"test_device_set_sg90_angle",  sg90_cmd_handler},
     {"debug_",  debug_utils_cmd_handler},
     {NULL, NULL} // 表结束的标记
 };
