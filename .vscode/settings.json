@@ -38,8 +38,8 @@
     "sockets.h": "c",
     "cjson.h": "c",
     "mpu6050_handler.h": "c",
-    "lvgl_handler.h": "c"
-  },
-  "idf.espIdfPathWin": "F:/Conf/Espressif/frameworks/esp-idf-v5.3.3/",
-  "idf.toolsPathWin": "F:\\Conf\\Espressif"
+    "lvgl_handler.h": "c",
+    "debug_utils.h": "c",
+    "mcpwm_prelude.h": "c"
+  }
 }

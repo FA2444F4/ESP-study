@@ -9,6 +9,9 @@
 #include "debug_utils.h"
 #include "wifi_handler.h"
 #include "mpu6050_handler.h"
+#include "mpu6050_handler.h"
+#include "sg90_control.h"
+#include "esc_driver.h"
 
 
 static const char *TAG = "CMD_PARSER";
@@ -63,9 +66,15 @@ static const cmd_entry_t cmd_table[] = {
     {"test_device_get_wifi_ip",  wifi_cmd_handler},
     {"test_device_get_wifi_list",  wifi_cmd_handler},
     {"test_device_set_wifi_connect",  wifi_cmd_handler},
+    {"test_device_set_mpu6050",  mpu6050_cmd_handler},
+    {"test_device_get_mpu6050_gypo_offset",  mpu6050_cmd_handler},
+    {"test_device_set_mpu6050_calibrate_gyro",  mpu6050_cmd_handler},
+    {"test_device_set_sg90_angle",  sg90_cmd_handler},
+    {"test_device_set_esc_speed",  esc_cmd_handler},
     {"debug_",  debug_utils_cmd_handler},
     {NULL, NULL} // 表结束的标记
 };
+
 
 //根据输入指令调用命令分发表的handler
 void cmd_parser_process_line(char *line,cmd_responder_t responder, void *context)

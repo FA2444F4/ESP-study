@@ -18,6 +18,7 @@ idf_component_register(
                         screen
                         sensor
                         wifi
+                        motor
                         
                     REQUIRES esp_driver_ledc
                     INCLUDE_DIRS ".")

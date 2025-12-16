@@ -13,6 +13,7 @@
 #include "lwip/sys.h"
 #include <lwip/netdb.h>
 #include "cJSON.h"
+#include <math.h> 
 
 
 #include "wifi_handler.h"
@@ -221,12 +222,43 @@ void wifi_handler_send_mpu_data(const mpu6050_data_t* data)
     }
     // 使用 cJSON_AddNumberToObject 来添加浮点数
     // 注意：ESP-IDF的cJSON版本可能需要 (double) 类型转换
-    cJSON_AddNumberToObject(root, "ax", (double)data->ax);
-    cJSON_AddNumberToObject(root, "ay", (double)data->ay);
-    cJSON_AddNumberToObject(root, "az", (double)data->az);
-    cJSON_AddNumberToObject(root, "gx", (double)data->gx);
-    cJSON_AddNumberToObject(root, "gy", (double)data->gy);
-    cJSON_AddNumberToObject(root, "gz", (double)data->gz);
+    /* float rounded_ax = roundf(data->ax * 100.0f) / 100.0f;
+    float rounded_ay = roundf(data->ay * 100.0f) / 100.0f;
+    float rounded_az = roundf(data->az * 100.0f) / 100.0f;
+    float rounded_gx = roundf(data->gx * 100.0f) / 100.0f;
+    float rounded_gy = roundf(data->gy * 100.0f) / 100.0f;
+    float rounded_gz = roundf(data->gz * 100.0f) / 100.0f;
+    cJSON_AddNumberToObject(root, "ax", (double)rounded_ax);
+    cJSON_AddNumberToObject(root, "ay", (double)rounded_ay);
+    cJSON_AddNumberToObject(root, "az", (double)rounded_az);
+    cJSON_AddNumberToObject(root, "gx", (double)rounded_gx);
+    cJSON_AddNumberToObject(root, "gy", (double)rounded_gy);
+    cJSON_AddNumberToObject(root, "gz", (double)rounded_gz); */
+    // 准备一个临时缓冲区来存放格式化后的数字字符串
+    char num_buffer[32];
+
+    // 1. 格式化加速度计数据
+    snprintf(num_buffer, sizeof(num_buffer), "%.2f", data->ax);
+    cJSON_AddItemToObject(root, "ax", cJSON_CreateRaw(num_buffer));
+
+    snprintf(num_buffer, sizeof(num_buffer), "%.2f", data->ay);
+    cJSON_AddItemToObject(root, "ay", cJSON_CreateRaw(num_buffer));
+
+    snprintf(num_buffer, sizeof(num_buffer), "%.2f", data->az);
+    cJSON_AddItemToObject(root, "az", cJSON_CreateRaw(num_buffer));
+
+
+    // 2. 格式化陀螺仪数据
+    snprintf(num_buffer, sizeof(num_buffer), "%.2f", data->gx);
+    cJSON_AddItemToObject(root, "gx", cJSON_CreateRaw(num_buffer));
+
+    snprintf(num_buffer, sizeof(num_buffer), "%.2f", data->gy);
+    cJSON_AddItemToObject(root, "gy", cJSON_CreateRaw(num_buffer));
+
+    snprintf(num_buffer, sizeof(num_buffer), "%.2f", data->gz);
+    cJSON_AddItemToObject(root, "gz", cJSON_CreateRaw(num_buffer));
+
+    
 
     char *json_string = cJSON_PrintUnformatted(root);
     if (json_string) {

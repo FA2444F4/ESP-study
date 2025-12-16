@@ -6,10 +6,7 @@ idf_component_register(
                     PRIV_REQUIRES 
                         spi_flash 
                         esp_driver_gpio 
-                        esp_driver_uart 
-                        esp_driver_i2c
-                        tool
+                        esp_driver_spi
                         driver
-                        wifi
-                        info
+                        tool
                     INCLUDE_DIRS ".")

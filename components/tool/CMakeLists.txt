@@ -1,4 +1,4 @@
-file(GLOB SRCS "cmd_parser.c" "*.c")
+file(GLOB SRCS  "*.c")
 
 idf_component_register(
                     SRCS ${SRCS}
@@ -14,5 +14,6 @@ idf_component_register(
                         led
                         wifi
                         sensor
+                        motor
                     REQUIRES debug
                     INCLUDE_DIRS ".")
