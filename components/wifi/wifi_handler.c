@@ -266,6 +266,7 @@ void wifi_handler_send_mpu_data(const mpu6050_data_t* data)
         char target_ip_str[16];
         inet_ntoa_r(target_addr_copy.sin_addr, target_ip_str, sizeof(target_ip_str));
         int sent_len = sendto(s_udp_socket, json_string, strlen(json_string), 0, (struct sockaddr *)&target_addr_copy, sizeof(target_addr_copy));
+        (void)sent_len;//修改方法 2 (假装使用一下，骗过编译器)：
         free(json_string);
     } else {
         ESP_LOGE(TAG, "Send failed: cJSON_PrintUnformatted returned NULL.");

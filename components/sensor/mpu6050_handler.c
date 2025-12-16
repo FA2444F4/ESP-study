@@ -6,6 +6,7 @@
 #include "mpu6050_handler.h"
 #include "wifi_handler.h"
 #include "system_info.h"
+#include <string.h>
 
 static const char *TAG = "MPU6050";
 
@@ -64,11 +65,11 @@ static esp_err_t mpu6050_register_read(uint8_t reg_addr, uint8_t *data_rd, size_
  * @param reg_addr 寄存器地址
  * @param data 要写入的数据
  */
-static esp_err_t mpu6050_register_write_byte(uint8_t reg_addr, uint8_t data)
-{
-    uint8_t write_buf[2] = {reg_addr, data};
-    return i2c_master_write_to_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, write_buf, sizeof(write_buf), 1000 / portTICK_PERIOD_MS);
-}
+// static esp_err_t mpu6050_register_write_byte(uint8_t reg_addr, uint8_t data)
+// {
+//     uint8_t write_buf[2] = {reg_addr, data};
+//     return i2c_master_write_to_device(I2C_MASTER_NUM, MPU6050_SENSOR_ADDR, write_buf, sizeof(write_buf), 1000 / portTICK_PERIOD_MS);
+// }
 
 static esp_err_t mpu6050_collect(mpu6050_data_t *sensor_data){
     if(sensor_data==NULL)return ESP_ERR_INVALID_ARG;
@@ -193,21 +194,21 @@ void mpu6050_cmd_handler(const char *command, const char *args,cmd_responder_t r
     }
 }
 
-void mpu6050_cmd_handler(const char *command, const char *args,cmd_responder_t responder, void *context){
-    //命令 test_device_set_mpu6050=on/off
-    if (strcmp(command, "test_device_set_mpu6050") == 0){
-        if (args == NULL) {
-            ESP_LOGE(TAG, "缺少参数on/off");
-            return;
-        }
-        if (strcmp(args, "on") == 0) {
-            xTaskCreate(mpu6050_task, "mpu6050_task", 4096, NULL, 5, &s_mpu6050_task_handle);
-            responder("mpu6050 task on", context);
-        } else if (strcmp(args, "off") == 0) {
-            vTaskDelete(s_mpu6050_task_handle);
-            responder("mpu6050 task off", context);
-        }
-    }
-}
+// void mpu6050_cmd_handler(const char *command, const char *args,cmd_responder_t responder, void *context){
+//     //命令 test_device_set_mpu6050=on/off
+//     if (strcmp(command, "test_device_set_mpu6050") == 0){
+//         if (args == NULL) {
+//             ESP_LOGE(TAG, "缺少参数on/off");
+//             return;
+//         }
+//         if (strcmp(args, "on") == 0) {
+//             xTaskCreate(mpu6050_task, "mpu6050_task", 4096, NULL, 5, &s_mpu6050_task_handle);
+//             responder("mpu6050 task on", context);
+//         } else if (strcmp(args, "off") == 0) {
+//             vTaskDelete(s_mpu6050_task_handle);
+//             responder("mpu6050 task off", context);
+//         }
+//     }
+// }
 
 
