@@ -15,5 +15,6 @@ idf_component_register(
                         wifi
                         sensor
                         motor
+                        esc
                     REQUIRES debug
                     INCLUDE_DIRS ".")

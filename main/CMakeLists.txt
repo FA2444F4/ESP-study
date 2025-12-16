@@ -19,6 +19,7 @@ idf_component_register(
                         sensor
                         wifi
                         motor
+                        esc
                         
                     REQUIRES esp_driver_ledc
                     INCLUDE_DIRS ".")

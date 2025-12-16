@@ -32,7 +32,7 @@ void app_main(void)
     ble_handler_init();
     debug_utils_init();
     wifi_handler_init();
-    mpu6050_handler_init();
+    // mpu6050_handler_init();
     sg90_control_init();
 
     esc_driver_init(); // <--- 2. 初始化电调
